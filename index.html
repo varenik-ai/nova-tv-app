@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -33,14 +33,124 @@
 <div id="video-container">
   <video id="video" controls autoplay muted playsinline></video>
 </div>
-<div id="status"><span class="dot"></span>Получаем поток...</div>
-<button id="reload-btn" onclick="init()">🔄 Переподключиться</button>
+<div id="status"><span class="dot"></span>...</div>
+<button id="reload-btn" onclick="init()">🔄</button>
+
 <script>
-  if (window.Telegram && window.Telegram.WebApp) {
-    Telegram.WebApp.ready();
-    Telegram.WebApp.expand();
+  // ── Локализация ──────────────────────────────────────────────
+  const TRANSLATIONS = {
+    ru: {
+      loading:     'Получаем поток...',
+      connecting:  'Подключение к эфиру...',
+      live:        'Nova TV — прямой эфир 🔴',
+      pressPlay:   'Нажмите ▶ для воспроизведения',
+      errorStream: 'Ошибка — переподключаемся...',
+      errorUrl:    'Не удалось получить URL потока',
+      errorServer: 'Ошибка сервера',
+      reconnect:   '🔄 Переподключиться',
+      noSupport:   'Браузер не поддерживает HLS',
+    },
+    bg: {
+      loading:     'Зареждаме потока...',
+      connecting:  'Свързване с ефира...',
+      live:        'Nova TV — на живо 🔴',
+      pressPlay:   'Натиснете ▶ за възпроизвеждане',
+      errorStream: 'Грешка — свързваме отново...',
+      errorUrl:    'Неуспешно получаване на URL',
+      errorServer: 'Грешка на сървъра',
+      reconnect:   '🔄 Свържи отново',
+      noSupport:   'Браузърът не поддържа HLS',
+    },
+    en: {
+      loading:     'Loading stream...',
+      connecting:  'Connecting to live feed...',
+      live:        'Nova TV — Live 🔴',
+      pressPlay:   'Press ▶ to play',
+      errorStream: 'Error — reconnecting...',
+      errorUrl:    'Failed to get stream URL',
+      errorServer: 'Server error',
+      reconnect:   '🔄 Reconnect',
+      noSupport:   'Browser does not support HLS',
+    },
+    de: {
+      loading:     'Stream wird geladen...',
+      connecting:  'Verbindung zum Live-Feed...',
+      live:        'Nova TV — Live 🔴',
+      pressPlay:   '▶ drücken zum Abspielen',
+      errorStream: 'Fehler — erneut verbinden...',
+      errorUrl:    'Stream-URL konnte nicht abgerufen werden',
+      errorServer: 'Serverfehler',
+      reconnect:   '🔄 Neu verbinden',
+      noSupport:   'Browser unterstützt kein HLS',
+    },
+    fr: {
+      loading:     'Chargement du flux...',
+      connecting:  'Connexion au direct...',
+      live:        'Nova TV — En direct 🔴',
+      pressPlay:   'Appuyez sur ▶ pour lire',
+      errorStream: 'Erreur — reconnexion...',
+      errorUrl:    'Impossible d\'obtenir l\'URL',
+      errorServer: 'Erreur serveur',
+      reconnect:   '🔄 Reconnecter',
+      noSupport:   'Navigateur ne supporte pas HLS',
+    },
+    es: {
+      loading:     'Cargando transmisión...',
+      connecting:  'Conectando al directo...',
+      live:        'Nova TV — En vivo 🔴',
+      pressPlay:   'Presione ▶ para reproducir',
+      errorStream: 'Error — reconectando...',
+      errorUrl:    'No se pudo obtener la URL',
+      errorServer: 'Error del servidor',
+      reconnect:   '🔄 Reconectar',
+      noSupport:   'El navegador no soporta HLS',
+    },
+    uk: {
+      loading:     'Отримуємо потік...',
+      connecting:  'Підключення до ефіру...',
+      live:        'Nova TV — прямий ефір 🔴',
+      pressPlay:   'Натисніть ▶ для відтворення',
+      errorStream: 'Помилка — перепідключаємось...',
+      errorUrl:    'Не вдалося отримати URL',
+      errorServer: 'Помилка сервера',
+      reconnect:   '🔄 Перепідключитись',
+      noSupport:   'Браузер не підтримує HLS',
+    },
+    tr: {
+      loading:     'Yayın yükleniyor...',
+      connecting:  'Canlı yayına bağlanılıyor...',
+      live:        'Nova TV — Canlı 🔴',
+      pressPlay:   'Oynatmak için ▶ basın',
+      errorStream: 'Hata — yeniden bağlanılıyor...',
+      errorUrl:    'Yayın URL\'si alınamadı',
+      errorServer: 'Sunucu hatası',
+      reconnect:   '🔄 Yeniden Bağlan',
+      noSupport:   'Tarayıcı HLS desteklemiyor',
+    },
+  };
+
+  function getLang() {
+    // 1. Язык из Telegram WebApp
+    try {
+      const tgLang = Telegram.WebApp.initDataUnsafe?.user?.language_code;
+      if (tgLang) {
+        const short = tgLang.split('-')[0].toLowerCase();
+        if (TRANSLATIONS[short]) return short;
+      }
+    } catch(e) {}
+    // 2. Язык браузера
+    const browserLang = (navigator.language || navigator.userLanguage || 'en').split('-')[0].toLowerCase();
+    return TRANSLATIONS[browserLang] ? browserLang : 'en';
   }
 
+  const lang = getLang();
+  const t    = TRANSLATIONS[lang];
+
+  // Устанавливаем язык страницы и текст кнопки
+  document.documentElement.lang = lang;
+  document.getElementById('reload-btn').textContent = t.reconnect;
+
+  // ── Плеер ────────────────────────────────────────────────────
   const STREAM_API = 'https://nova-proxy-eight.vercel.app/api/stream';
   const PROXY_BASE = 'https://nova-proxy-eight.vercel.app/api/proxy?url=';
 
@@ -49,40 +159,49 @@
   const reloadBtn = document.getElementById('reload-btn');
   let hls;
 
-  function setStatus(msg, isError) {
-    status.innerHTML = isError ? `⚠️ ${msg}` : `<span class="dot"></span>${msg}`;
+  if (window.Telegram && window.Telegram.WebApp) {
+    Telegram.WebApp.ready();
+    Telegram.WebApp.expand();
+  }
+
+  function setStatus(key, isError) {
+    const msg = t[key] || key;
+    status.innerHTML = isError
+      ? `⚠️ ${msg}`
+      : `<span class="dot"></span>${msg}`;
     reloadBtn.style.display = isError ? 'block' : 'none';
   }
 
   function loadStream(url) {
     const proxiedUrl = PROXY_BASE + encodeURIComponent(url);
-    console.log('Loading via proxy:', proxiedUrl);
     if (hls) hls.destroy();
+    setStatus('connecting');
 
     if (Hls.isSupported()) {
       hls = new Hls({ liveSyncDurationCount: 3 });
       hls.loadSource(proxiedUrl);
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        setStatus('Nova TV — прямой эфир 🔴');
-        video.play().catch(() => setStatus('Нажмите ▶ для воспроизведения'));
+        setStatus('live');
+        video.play().catch(() => setStatus('pressPlay'));
       });
       hls.on(Hls.Events.ERROR, (e, data) => {
-        console.error('HLS error:', data.type, data.details);
         if (data.fatal) {
-          setStatus('Ошибка — переподключаемся...', true);
+          setStatus('errorStream', true);
           setTimeout(init, 3000);
         }
       });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
       video.src = proxiedUrl;
       video.play();
-      setStatus('Nova TV — прямой эфир 🔴');
+      setStatus('live');
+    } else {
+      setStatus('noSupport', true);
     }
   }
 
   async function init() {
-    setStatus('Получаем свежий поток...');
+    setStatus('loading');
     reloadBtn.style.display = 'none';
     try {
       const r = await fetch(STREAM_API + '?t=' + Date.now());
@@ -90,11 +209,10 @@
       if (d.url) {
         loadStream(d.url);
       } else {
-        setStatus('Не удалось получить URL', true);
+        setStatus('errorUrl', true);
       }
     } catch(e) {
-      console.error(e);
-      setStatus('Ошибка: ' + e.message, true);
+      setStatus('errorServer', true);
     }
   }
 

@@ -18,102 +18,64 @@
       font-family: -apple-system, sans-serif;
       color: white;
     }
-    .logo {
-      font-size: 28px;
-      font-weight: 900;
-      color: #e63946;
-      letter-spacing: 2px;
-      margin-bottom: 16px;
-      text-transform: uppercase;
-    }
+    .logo { font-size: 28px; font-weight: 900; color: #e63946; letter-spacing: 2px; margin-bottom: 16px; text-transform: uppercase; }
     .logo span { color: white; }
-    #video-container {
-      width: 100%;
-      max-width: 900px;
-      position: relative;
-      background: #000;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-    }
+    #video-container { width: 100%; max-width: 900px; background: #000; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.6); }
     video { width: 100%; display: block; }
-    #status {
-      margin-top: 14px;
-      font-size: 13px;
-      color: #888;
-      text-align: center;
-    }
-    .dot {
-      display: inline-block;
-      width: 8px; height: 8px;
-      background: #e63946;
-      border-radius: 50%;
-      margin-right: 6px;
-      animation: pulse 1.2s infinite;
-    }
-    @keyframes pulse {
-      0%,100% { opacity:1; } 50% { opacity:0.2; }
-    }
-    #reload-btn {
-      margin-top: 16px;
-      padding: 10px 28px;
-      background: #e63946;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 15px;
-      cursor: pointer;
-      display: none;
-    }
+    #status { margin-top: 14px; font-size: 13px; color: #888; text-align: center; }
+    .dot { display: inline-block; width: 8px; height: 8px; background: #e63946; border-radius: 50%; margin-right: 6px; animation: pulse 1.2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.2} }
+    #reload-btn { margin-top: 16px; padding: 10px 28px; background: #e63946; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; display: none; }
   </style>
 </head>
 <body>
-
 <div class="logo">NOVA <span>TV</span></div>
 <div id="video-container">
   <video id="video" controls autoplay muted playsinline></video>
 </div>
 <div id="status"><span class="dot"></span>Получаем поток...</div>
 <button id="reload-btn" onclick="init()">🔄 Переподключиться</button>
-
 <script>
   if (window.Telegram && window.Telegram.WebApp) {
     Telegram.WebApp.ready();
     Telegram.WebApp.expand();
   }
 
-  // ЗАМЕНИ на свой URL после деплоя на Vercel
-  const PROXY_URL = 'https://nova-proxy-eight.vercel.app/api/stream';
-  
-  const video = document.getElementById('video');
-  const status = document.getElementById('status');
+  const STREAM_API = 'https://nova-proxy-eight.vercel.app/api/stream';
+  const PROXY_BASE = 'https://nova-proxy-eight.vercel.app/api/proxy?url=';
+
+  const video     = document.getElementById('video');
+  const status    = document.getElementById('status');
   const reloadBtn = document.getElementById('reload-btn');
   let hls;
 
   function setStatus(msg, isError) {
-    status.innerHTML = isError
-      ? `⚠️ ${msg}`
-      : `<span class="dot"></span>${msg}`;
+    status.innerHTML = isError ? `⚠️ ${msg}` : `<span class="dot"></span>${msg}`;
     reloadBtn.style.display = isError ? 'block' : 'none';
   }
 
   function loadStream(url) {
+    const proxiedUrl = PROXY_BASE + encodeURIComponent(url);
+    console.log('Loading via proxy:', proxiedUrl);
     if (hls) hls.destroy();
-    setStatus('Подключение к эфиру...');
 
     if (Hls.isSupported()) {
       hls = new Hls({ liveSyncDurationCount: 3 });
-      hls.loadSource(url);
+      hls.loadSource(proxiedUrl);
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         setStatus('Nova TV — прямой эфир 🔴');
         video.play().catch(() => setStatus('Нажмите ▶ для воспроизведения'));
       });
       hls.on(Hls.Events.ERROR, (e, data) => {
-        if (data.fatal) setStatus('Ошибка потока. Обновляем...', true);
+        console.error('HLS error:', data.type, data.details);
+        if (data.fatal) {
+          setStatus('Ошибка — переподключаемся...', true);
+          setTimeout(init, 3000);
+        }
       });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = url;
+      video.src = proxiedUrl;
       video.play();
       setStatus('Nova TV — прямой эфир 🔴');
     }
@@ -121,22 +83,23 @@
 
   async function init() {
     setStatus('Получаем свежий поток...');
+    reloadBtn.style.display = 'none';
     try {
-      const res = await fetch(PROXY_URL);
-      const data = await res.json();
-      if (data.url) {
-        loadStream(data.url);
+      const r = await fetch(STREAM_API + '?t=' + Date.now());
+      const d = await r.json();
+      if (d.url) {
+        loadStream(d.url);
       } else {
-        setStatus('Не удалось получить поток', true);
+        setStatus('Не удалось получить URL', true);
       }
     } catch(e) {
-      setStatus('Ошибка сервера: ' + e.message, true);
+      console.error(e);
+      setStatus('Ошибка: ' + e.message, true);
     }
   }
 
   init();
-  // Автообновление каждые 30 минут
-  setInterval(init, 30 * 60 * 1000);
+  setInterval(init, 25 * 60 * 1000);
 </script>
 </body>
 </html>

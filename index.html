@@ -46,7 +46,7 @@
 <body>
 <div class="logo">NOVA <span>TV</span></div>
 <div id="video-container">
-  <video id="video" controls autoplay muted playsinline></video>
+  <video id="video" controls autoplay playsinline></video>
 </div>
 <div id="status"><span class="dot"></span>...</div>
 <div class="buttons">
@@ -149,7 +149,16 @@
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         setStatus('live');
-        video.play().catch(() => setStatus('pressPlay'));
+        video.muted = false;
+        video.volume = 1.0;
+        video.play().catch(() => {
+          // Браузер заблокировал — запускаем muted, потом unmute
+          video.muted = true;
+          video.play().then(() => {
+            video.muted = false;
+            video.volume = 1.0;
+          }).catch(() => setStatus('pressPlay'));
+        });
         setupMediaSession();
         requestWakeLock();
       });
@@ -162,7 +171,12 @@
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
       // Safari — нативный HLS, лучшее фоновое воспроизведение
       video.src = proxiedUrl;
-      video.play();
+      video.muted = false;
+      video.volume = 1.0;
+      video.play().catch(() => {
+        video.muted = true;
+        video.play().then(() => { video.muted = false; video.volume = 1.0; });
+      });
       setStatus('live');
       setupMediaSession();
       requestWakeLock();

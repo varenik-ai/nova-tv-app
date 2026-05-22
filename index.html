@@ -26,7 +26,7 @@
     .dot { display: inline-block; width: 8px; height: 8px; background: #e63946; border-radius: 50%; margin-right: 6px; animation: pulse 1.2s infinite; }
     @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.2} }
     #reload-btn { margin-top: 12px; padding: 10px 28px; background: #e63946; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; display: none; }
-    .buttons { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 4px; }
+    #unmute-btn { margin-top: 12px; padding: 10px 24px; background: #e63946; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; display: none; }
   </style>
 </head>
 <body>
@@ -35,11 +35,8 @@
   <video id="video" controls autoplay muted playsinline></video>
 </div>
 <div id="status"><span class="dot"></span>...</div>
-<div class="buttons">
-  <button id="reload-btn" onclick="init()">🔄</button>
-  <button id="unmute-btn" onclick="unmute()" style="margin-top:12px;padding:10px 24px;background:#e63946;color:white;border:none;border-radius:8px;font-size:15px;cursor:pointer;display:none;">🔊</button>
-  
-</div>
+<button id="reload-btn" onclick="init()">🔄</button>
+<button id="unmute-btn" onclick="unmute()">🔊</button>
 
 <script>
   if (window.Telegram && window.Telegram.WebApp) {
@@ -48,6 +45,14 @@
   }
 
   const TRANSLATIONS = {
+    ru: { loading:'Получаем поток...', connecting:'Подключение...', live:'Nova TV — прямой эфир 🔴', pressPlay:'Нажмите ▶ для воспроизведения', errorStream:'Ошибка — переподключаемся...', errorUrl:'Не удалось получить URL', errorServer:'Ошибка сервера', reconnect:'🔄 Переподключиться', unmute:'🔊 Включить звук' },
+    bg: { loading:'Зареждаме...', connecting:'Свързване...', live:'Nova TV — на живо 🔴', pressPlay:'Натиснете ▶', errorStream:'Грешка — свързваме...', errorUrl:'Неуспешно', errorServer:'Грешка', reconnect:'🔄 Свържи отново', unmute:'🔊 Включи звук' },
+    en: { loading:'Loading stream...', connecting:'Connecting...', live:'Nova TV — Live 🔴', pressPlay:'Press ▶ to play', errorStream:'Error — reconnecting...', errorUrl:'Failed to get URL', errorServer:'Server error', reconnect:'🔄 Reconnect', unmute:'🔊 Unmute' },
+    de: { loading:'Laden...', connecting:'Verbinden...', live:'Nova TV — Live 🔴', pressPlay:'▶ drücken', errorStream:'Fehler...', errorUrl:'URL Fehler', errorServer:'Serverfehler', reconnect:'🔄 Neu verbinden', unmute:'🔊 Ton an' },
+    fr: { loading:'Chargement...', connecting:'Connexion...', live:'Nova TV — En direct 🔴', pressPlay:'Appuyez ▶', errorStream:'Erreur...', errorUrl:'URL introuvable', errorServer:'Erreur serveur', reconnect:'🔄 Reconnecter', unmute:'🔊 Activer le son' },
+    es: { loading:'Cargando...', connecting:'Conectando...', live:'Nova TV — En vivo 🔴', pressPlay:'Presione ▶', errorStream:'Error...', errorUrl:'URL fallida', errorServer:'Error servidor', reconnect:'🔄 Reconectar', unmute:'🔊 Activar sonido' },
+    uk: { loading:'Отримуємо...', connecting:'Підключення...', live:'Nova TV — прямий ефір 🔴', pressPlay:'Натисніть ▶', errorStream:'Помилка...', errorUrl:'URL не знайдено', errorServer:'Помилка сервера', reconnect:'🔄 Перепідключитись', unmute:'🔊 Увімкнути звук' },
+    tr: { loading:'Yükleniyor...', connecting:'Bağlanıyor...', live:'Nova TV — Canlı 🔴', pressPlay:'▶ basın', errorStream:'Hata...', errorUrl:'URL alınamadı', errorServer:'Sunucu hatası', reconnect:'🔄 Yeniden Bağlan', unmute:'🔊 Sesi aç' },
   };
 
   function getLang() {
@@ -63,6 +68,7 @@
   const t = TRANSLATIONS[lang];
   document.documentElement.lang = lang;
   document.getElementById('reload-btn').textContent = t.reconnect;
+  document.getElementById('unmute-btn').textContent = t.unmute;
 
   const STREAM_API = 'https://nova-proxy-eight.vercel.app/api/stream';
   const PROXY_BASE = 'https://nova-proxy-eight.vercel.app/api/proxy?url=';
@@ -70,8 +76,8 @@
   const video     = document.getElementById('video');
   const status    = document.getElementById('status');
   const reloadBtn = document.getElementById('reload-btn');
+  const unmuteBtn = document.getElementById('unmute-btn');
   let hls;
-  let currentStreamUrl = null;
 
   function setStatus(key, isError) {
     const msg = t[key] || key;
@@ -82,42 +88,35 @@
   function unmute() {
     video.muted = false;
     video.volume = 1.0;
-    document.getElementById('unmute-btn').style.display = 'none';
+    unmuteBtn.style.display = 'none';
   }
 
-  // Медиасессия — управление с экрана блокировки
   function setupMediaSession() {
     if ('mediaSession' in navigator) {
       navigator.mediaSession.metadata = new MediaMetadata({
         title: 'Nova TV Bulgaria',
         artist: 'Live Stream 🔴',
         album: 'Nova TV',
-        artwork: [{ src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Nova_TV_Bulgaria_Logo.svg/200px-Nova_TV_Bulgaria_Logo.svg.png', sizes: '200x200', type: 'image/png' }]
       });
       navigator.mediaSession.setActionHandler('play', () => video.play());
       navigator.mediaSession.setActionHandler('pause', () => video.pause());
     }
   }
 
-  // Не засыпать — Wake Lock API
   async function requestWakeLock() {
     try {
       if ('wakeLock' in navigator) {
-        const lock = await navigator.wakeLock.request('screen');
-        console.log('Wake Lock активен');
+        await navigator.wakeLock.request('screen');
         document.addEventListener('visibilitychange', async () => {
           if (document.visibilityState === 'visible') {
             await navigator.wakeLock.request('screen');
           }
         });
       }
-    } catch(e) {
-      console.log('Wake Lock недоступен:', e.message);
-    }
+    } catch(e) {}
   }
 
   function loadStream(url) {
-    currentStreamUrl = url;
     const proxiedUrl = PROXY_BASE + encodeURIComponent(url);
     if (hls) hls.destroy();
     setStatus('connecting');
@@ -128,17 +127,10 @@
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         setStatus('live');
-        document.getElementById('unmute-btn').style.display = 'block';
-        video.muted = false;
-        video.volume = 1.0;
-        video.play().catch(() => {
-          // Браузер заблокировал — запускаем muted, потом unmute
-          video.muted = true;
-          video.play().then(() => {
-            video.muted = false;
-            video.volume = 1.0;
-          }).catch(() => setStatus('pressPlay'));
-        });
+        video.muted = true;
+        video.play().then(() => {
+          unmuteBtn.style.display = 'block';
+        }).catch(() => setStatus('pressPlay'));
         setupMediaSession();
         requestWakeLock();
       });
@@ -149,13 +141,10 @@
         }
       });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      // Safari — нативный HLS, лучшее фоновое воспроизведение
       video.src = proxiedUrl;
-      video.muted = false;
-      video.volume = 1.0;
-      video.play().catch(() => {
-        video.muted = true;
-        video.play().then(() => { video.muted = false; video.volume = 1.0; });
+      video.muted = true;
+      video.play().then(() => {
+        unmuteBtn.style.display = 'block';
       });
       setStatus('live');
       setupMediaSession();
@@ -166,6 +155,7 @@
   async function init() {
     setStatus('loading');
     reloadBtn.style.display = 'none';
+    unmuteBtn.style.display = 'none';
     try {
       const r = await fetch(STREAM_API + '?t=' + Date.now());
       const d = await r.json();

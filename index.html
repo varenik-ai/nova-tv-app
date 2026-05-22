@@ -36,10 +36,7 @@
       overflow: hidden;
       box-shadow: 0 8px 32px rgba(0,0,0,0.6);
     }
-    video {
-      width: 100%;
-      display: block;
-    }
+    video { width: 100%; display: block; }
     #status {
       margin-top: 14px;
       font-size: 13px;
@@ -68,28 +65,26 @@
       cursor: pointer;
       display: none;
     }
-    #reload-btn:hover { background: #c1121f; }
   </style>
 </head>
 <body>
 
 <div class="logo">NOVA <span>TV</span></div>
-
 <div id="video-container">
   <video id="video" controls autoplay muted playsinline></video>
 </div>
-
-<div id="status"><span class="dot"></span>Подключение к эфиру...</div>
-<button id="reload-btn" onclick="loadStream()">🔄 Переподключиться</button>
+<div id="status"><span class="dot"></span>Получаем поток...</div>
+<button id="reload-btn" onclick="init()">🔄 Переподключиться</button>
 
 <script>
-  // Инициализация Telegram Web App
   if (window.Telegram && window.Telegram.WebApp) {
     Telegram.WebApp.ready();
     Telegram.WebApp.expand();
   }
 
-  const STREAM_URL = 'https://e112-ts.cdn.bg/nbg/nova/live/at=O0U9MTc3OTUxMzkxOTtBPTE7Sz0xMTtQPTAxMTEwO1M9OGU1ZjhlZjc4NDIzYjM1YjdkMDM1OWQ5M2E5ODdhODAxMDM5OTM2NA==/in_nova/live_720/chunks.m3u8';
+  // ЗАМЕНИ на свой URL после деплоя на Vercel
+  const PROXY_URL = 'https://nova-proxy-eight.vercel.app/api/stream';
+  
   const video = document.getElementById('video');
   const status = document.getElementById('status');
   const reloadBtn = document.getElementById('reload-btn');
@@ -102,43 +97,46 @@
     reloadBtn.style.display = isError ? 'block' : 'none';
   }
 
-  function loadStream() {
-    if (hls) { hls.destroy(); }
+  function loadStream(url) {
+    if (hls) hls.destroy();
     setStatus('Подключение к эфиру...');
 
     if (Hls.isSupported()) {
-      hls = new Hls({
-        maxBufferLength: 30,
-        maxMaxBufferLength: 60,
-        liveSyncDurationCount: 3,
-      });
-      hls.loadSource(STREAM_URL);
+      hls = new Hls({ liveSyncDurationCount: 3 });
+      hls.loadSource(url);
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         setStatus('Nova TV — прямой эфир 🔴');
-        video.play().catch(() => {
-          setStatus('Нажмите ▶ для воспроизведения');
-        });
+        video.play().catch(() => setStatus('Нажмите ▶ для воспроизведения'));
       });
-      hls.on(Hls.Events.ERROR, (event, data) => {
-        if (data.fatal) {
-          setStatus('Ошибка потока. Попробуйте переподключиться.', true);
-        }
+      hls.on(Hls.Events.ERROR, (e, data) => {
+        if (data.fatal) setStatus('Ошибка потока. Обновляем...', true);
       });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      // Safari — нативная поддержка HLS
-      video.src = STREAM_URL;
-      video.addEventListener('loadedmetadata', () => {
-        setStatus('Nova TV — прямой эфир 🔴');
-        video.play();
-      });
-    } else {
-      setStatus('Ваш браузер не поддерживает HLS-потоки.', true);
+      video.src = url;
+      video.play();
+      setStatus('Nova TV — прямой эфир 🔴');
     }
   }
 
-  loadStream();
-</script>
+  async function init() {
+    setStatus('Получаем свежий поток...');
+    try {
+      const res = await fetch(PROXY_URL);
+      const data = await res.json();
+      if (data.url) {
+        loadStream(data.url);
+      } else {
+        setStatus('Не удалось получить поток', true);
+      }
+    } catch(e) {
+      setStatus('Ошибка сервера: ' + e.message, true);
+    }
+  }
 
+  init();
+  // Автообновление каждые 30 минут
+  setInterval(init, 30 * 60 * 1000);
+</script>
 </body>
 </html>

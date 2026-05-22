@@ -26,20 +26,6 @@
     .dot { display: inline-block; width: 8px; height: 8px; background: #e63946; border-radius: 50%; margin-right: 6px; animation: pulse 1.2s infinite; }
     @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.2} }
     #reload-btn { margin-top: 12px; padding: 10px 28px; background: #e63946; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; display: none; }
-    #safari-btn {
-      margin-top: 12px;
-      padding: 10px 20px;
-      background: transparent;
-      color: #888;
-      border: 1px solid #333;
-      border-radius: 8px;
-      font-size: 13px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    #safari-btn:hover { border-color: #666; color: #aaa; }
     .buttons { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 4px; }
   </style>
 </head>
@@ -62,14 +48,6 @@
   }
 
   const TRANSLATIONS = {
-    ru: { loading:'Получаем поток...', connecting:'Подключение...', live:'Nova TV — прямой эфир 🔴', pressPlay:'Нажмите ▶ для воспроизведения', errorStream:'Ошибка — переподключаемся...', errorUrl:'Не удалось получить URL', errorServer:'Ошибка сервера', reconnect:'🔄 Переподключиться', noSupport:'Браузер не поддерживает HLS', openBrowser:'🔗 Открыть в браузере', browserHint:'Для фонового воспроизведения откройте в браузере' },
-    bg: { loading:'Зареждаме...', connecting:'Свързване...', live:'Nova TV — на живо 🔴', pressPlay:'Натиснете ▶', errorStream:'Грешка — свързваме...', errorUrl:'Неуспешно', errorServer:'Грешка', reconnect:'🔄 Свържи отново', noSupport:'Браузърът не поддържа HLS', openBrowser:'🔗 Отвори в браузър', browserHint:'За фоново възпроизвеждане отворете в браузър' },
-    en: { loading:'Loading stream...', connecting:'Connecting...', live:'Nova TV — Live 🔴', pressPlay:'Press ▶ to play', errorStream:'Error — reconnecting...', errorUrl:'Failed to get URL', errorServer:'Server error', reconnect:'🔄 Reconnect', noSupport:'Browser does not support HLS', openBrowser:'🔗 Open in browser', browserHint:'For background playback open in browser' },
-    de: { loading:'Laden...', connecting:'Verbinden...', live:'Nova TV — Live 🔴', pressPlay:'▶ drücken', errorStream:'Fehler — verbinden...', errorUrl:'URL Fehler', errorServer:'Serverfehler', reconnect:'🔄 Neu verbinden', noSupport:'Kein HLS Support', openBrowser:'🔗 Im Browser öffnen', browserHint:'Für Hintergrundwiedergabe im Browser öffnen' },
-    fr: { loading:'Chargement...', connecting:'Connexion...', live:'Nova TV — En direct 🔴', pressPlay:'Appuyez ▶', errorStream:'Erreur — reconnexion...', errorUrl:'URL introuvable', errorServer:'Erreur serveur', reconnect:'🔄 Reconnecter', noSupport:'HLS non supporté', openBrowser:'🔗 Ouvrir dans le navigateur', browserHint:'Pour lecture en arrière-plan, ouvrez dans le navigateur' },
-    es: { loading:'Cargando...', connecting:'Conectando...', live:'Nova TV — En vivo 🔴', pressPlay:'Presione ▶', errorStream:'Error — reconectando...', errorUrl:'URL fallida', errorServer:'Error servidor', reconnect:'🔄 Reconectar', noSupport:'Sin soporte HLS', openBrowser:'🔗 Abrir en navegador', browserHint:'Para reproducción en fondo, abra en navegador' },
-    uk: { loading:'Отримуємо...', connecting:'Підключення...', live:'Nova TV — прямий ефір 🔴', pressPlay:'Натисніть ▶', errorStream:'Помилка — перепідключення...', errorUrl:'URL не знайдено', errorServer:'Помилка сервера', reconnect:'🔄 Перепідключитись', noSupport:'HLS не підтримується', openBrowser:'🔗 Відкрити у браузері', browserHint:'Для фонового відтворення відкрийте у браузері' },
-    tr: { loading:'Yükleniyor...', connecting:'Bağlanıyor...', live:'Nova TV — Canlı 🔴', pressPlay:'▶ basın', errorStream:'Hata — bağlanıyor...', errorUrl:'URL alınamadı', errorServer:'Sunucu hatası', reconnect:'🔄 Yeniden Bağlan', noSupport:'HLS desteklenmiyor', openBrowser:'🔗 Tarayıcıda aç', browserHint:'Arka plan oynatma için tarayıcıda açın' },
   };
 
   function getLang() {
@@ -85,11 +63,9 @@
   const t = TRANSLATIONS[lang];
   document.documentElement.lang = lang;
   document.getElementById('reload-btn').textContent = t.reconnect;
-  document.getElementById('safari-label').textContent = t.openBrowser;
 
   const STREAM_API = 'https://nova-proxy-eight.vercel.app/api/stream';
   const PROXY_BASE = 'https://nova-proxy-eight.vercel.app/api/proxy?url=';
-  const EXTERNAL_URL = 'https://varenik-ai.github.io/nova-tv-app/';
 
   const video     = document.getElementById('video');
   const status    = document.getElementById('status');

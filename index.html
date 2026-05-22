@@ -46,11 +46,12 @@
 <body>
 <div class="logo">NOVA <span>TV</span></div>
 <div id="video-container">
-  <video id="video" controls autoplay playsinline></video>
+  <video id="video" controls autoplay muted playsinline></video>
 </div>
 <div id="status"><span class="dot"></span>...</div>
 <div class="buttons">
   <button id="reload-btn" onclick="init()">🔄</button>
+  <button id="unmute-btn" onclick="unmute()" style="margin-top:12px;padding:10px 24px;background:#e63946;color:white;border:none;border-radius:8px;font-size:15px;cursor:pointer;display:none;">🔊</button>
   
 </div>
 
@@ -102,8 +103,10 @@
     reloadBtn.style.display = isError ? 'block' : 'none';
   }
 
-  function openExternal() {
-    window.open(EXTERNAL_URL, '_blank');
+  function unmute() {
+    video.muted = false;
+    video.volume = 1.0;
+    document.getElementById('unmute-btn').style.display = 'none';
   }
 
   // Медиасессия — управление с экрана блокировки
@@ -149,6 +152,7 @@
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         setStatus('live');
+        document.getElementById('unmute-btn').style.display = 'block';
         video.muted = false;
         video.volume = 1.0;
         video.play().catch(() => {

@@ -143,6 +143,22 @@
   let hls;
   let isFs = false;
 
+  function cssFullscreen() {
+    container.classList.add('fullscreen');
+    logo.style.display = 'none';
+    status.style.display = 'none';
+    fsBtn.textContent = '✕';
+    isFs = true;
+  }
+
+  function cssExitFullscreen() {
+    container.classList.remove('fullscreen');
+    logo.style.display = '';
+    status.style.display = '';
+    fsBtn.textContent = '⛶';
+    isFs = false;
+  }
+
   function toggleFullscreen() {
     if (!isFs) {
       if (video.requestFullscreen) {

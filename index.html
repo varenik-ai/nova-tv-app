@@ -39,17 +39,6 @@
     }
     video { width: 100%; display: block; background: #000; }
     #video-container.fullscreen video { height: 100vh; object-fit: contain; }
-    #fs-btn {
-      position: absolute;
-      bottom: 10px; right: 10px;
-      background: rgba(0,0,0,0.6);
-      border: none; color: white;
-      font-size: 20px;
-      padding: 6px 10px;
-      border-radius: 6px;
-      cursor: pointer;
-      z-index: 10000;
-    }
     #status { margin-top: 14px; font-size: 13px; color: #888; text-align: center; }
     .dot { display: inline-block; width: 8px; height: 8px; background: #e63946; border-radius: 50%; margin-right: 6px; animation: pulse 1.2s infinite; }
     @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.2} }
@@ -78,7 +67,6 @@
 <div class="logo" id="logo">NOVA <span>TV</span></div>
 <div id="video-container">
   <video id="video" controls autoplay muted playsinline webkit-playsinline airplay="allow"></video>
-  <button id="fs-btn" onclick="openInBrowser()">⛶</button>
 </div>
 <div id="status"><span class="dot"></span>...</div>
 <button id="reload-btn" onclick="init()">🔄</button>
@@ -139,11 +127,8 @@
   // Показываем подсказку только на Android в Telegram
   if (isAndroid && isTelegram) {
     const hint = document.getElementById('android-hint');
-    // Убираем href, вешаем onclick
-    const hintText = t.androidHint.replace(/<a [^>]+>([^<]+)<\/a>/, '<span onclick="openExternal()" style="color:#e63946;font-weight:bold;cursor:pointer;text-decoration:underline;">$1</span>');
-    hint.innerHTML = hintText;
+    hint.innerHTML = '<button onclick="openExternal()" style="margin-top:4px;padding:10px 20px;background:#e63946;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;width:100%;">🌐 ' + t.openExternal + '</button>';
     hint.style.display = 'block';
-    document.getElementById('fs-btn').style.display = 'none';
   }
 
   const STREAM_API = 'https://nova-proxy-eight.vercel.app/api/stream';
@@ -155,7 +140,6 @@
   const reloadBtn = document.getElementById('reload-btn');
   const unmuteBtn = document.getElementById('unmute-btn');
   const logo      = document.getElementById('logo');
-  const fsBtn     = document.getElementById('fs-btn');
   let hls;
   let isFs = false;
 

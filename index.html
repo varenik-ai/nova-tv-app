@@ -96,12 +96,20 @@
   document.getElementById('reload-btn').textContent = t.reconnect;
   document.getElementById('unmute-btn').textContent = t.unmute;
 
-  // Показываем кнопку только на Android в Telegram
+  // Показываем подсказку только на Android в Telegram
   if (isAndroid && isTelegram) {
     const hint = document.getElementById('android-hint');
-    const labels = {ru:'🌐 Открыть для полного экрана',bg:'🌐 Отвори за цял екран',en:'🌐 Open fullscreen',de:'🌐 Vollbild öffnen',fr:'🌐 Ouvrir plein écran',es:'🌐 Abrir pantalla completa',uk:'🌐 Відкрити повний екран',tr:'🌐 Tam ekran aç'};
-    const label = labels[lang] || labels.en;
-    hint.innerHTML = '<a href="https://nova-proxy-eight.vercel.app/api/redirect" style="display:block;margin-top:4px;padding:10px 20px;background:#e63946;color:white;border-radius:8px;font-size:14px;text-align:center;text-decoration:none;font-weight:bold;">' + label + '</a>';
+    const labels = {
+      ru:'💡 Для полного экрана и фонового звука — используйте кнопку <b>🌐 Открыть в браузере</b> в меню бота',
+      bg:'💡 За цял екран — използвайте бутона <b>🌐 Отвори в браузър</b> в менюто на бота',
+      en:'💡 For fullscreen & background audio — use <b>🌐 Open in browser</b> button in bot menu',
+      de:'💡 Vollbild — nutzen Sie <b>🌐 Im Browser öffnen</b> im Bot-Menü',
+      fr:'💡 Plein écran — utilisez <b>🌐 Ouvrir dans le navigateur</b> dans le menu du bot',
+      es:'💡 Pantalla completa — use <b>🌐 Abrir en navegador</b> en el menú del bot',
+      uk:'💡 Повний екран — використовуйте кнопку <b>🌐 Відкрити у браузері</b> в меню бота',
+      tr:'💡 Tam ekran — bot menüsünde <b>🌐 Tarayıcıda aç</b> butonunu kullanın',
+    };
+    hint.innerHTML = labels[lang] || labels.en;
     hint.style.display = 'block';
   }
 

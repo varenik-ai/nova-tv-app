@@ -124,10 +124,15 @@
   const EXTERNAL_URL = 'https://varenik-ai.github.io/nova-tv-app/';
 
   function openExternal() {
-    if (window.Telegram && Telegram.WebApp.openLink) {
-      Telegram.WebApp.openLink(EXTERNAL_URL, { try_instant_view: false });
+    const url = 'https://varenik-ai.github.io/nova-tv-app/';
+    // intent:// открывает Chrome напрямую минуя встроенный браузер
+    const intentUrl = 'intent://' + url.replace('https://', '') + '#Intent;scheme=https;package=com.android.chrome;end';
+    if (isAndroid) {
+      window.location.href = intentUrl;
+    } else if (window.Telegram && Telegram.WebApp.openLink) {
+      Telegram.WebApp.openLink(url, { try_instant_view: false });
     } else {
-      window.open(EXTERNAL_URL, '_blank');
+      window.open(url, '_blank');
     }
   }
 

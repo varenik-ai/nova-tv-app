@@ -99,7 +99,9 @@
   // Показываем подсказку только на Android в Telegram
   if (isAndroid && isTelegram) {
     const hint = document.getElementById('android-hint');
-    hint.innerHTML = t.androidHint;
+    const labels = {ru:'🌐 Открыть для полного экрана',bg:'🌐 Отвори за цял екран',en:'🌐 Open fullscreen',de:'🌐 Vollbild öffnen',fr:'🌐 Ouvrir plein écran',es:'🌐 Abrir pantalla completa',uk:'🌐 Відкрити повний екран',tr:'🌐 Tam ekran aç'};
+    const label = labels[lang] || labels.en;
+    hint.innerHTML = '<a href="https://nova-tv-app.pages.dev/" style="display:block;margin-top:4px;padding:10px 20px;background:#e63946;color:white;border-radius:8px;font-size:14px;text-align:center;text-decoration:none;font-weight:bold;">' + label + '</a>';
     hint.style.display = 'block';
   }
 

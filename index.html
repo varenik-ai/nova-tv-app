@@ -121,12 +121,23 @@
   document.getElementById('reload-btn').textContent = t.reconnect;
   document.getElementById('unmute-btn').textContent = t.unmute;
 
+  const EXTERNAL_URL = 'https://varenik-ai.github.io/nova-tv-app/';
+
+  function openExternal() {
+    if (window.Telegram && Telegram.WebApp.openLink) {
+      Telegram.WebApp.openLink(EXTERNAL_URL, { try_instant_view: false });
+    } else {
+      window.open(EXTERNAL_URL, '_blank');
+    }
+  }
+
   // Показываем подсказку только на Android в Telegram
   if (isAndroid && isTelegram) {
     const hint = document.getElementById('android-hint');
-    hint.innerHTML = t.androidHint;
+    // Убираем href, вешаем onclick
+    const hintText = t.androidHint.replace(/<a [^>]+>([^<]+)<\/a>/, '<span onclick="openExternal()" style="color:#e63946;font-weight:bold;cursor:pointer;text-decoration:underline;">$1</span>');
+    hint.innerHTML = hintText;
     hint.style.display = 'block';
-    // Скрываем кнопку fullscreen на Android — она не работает
     document.getElementById('fs-btn').style.display = 'none';
   }
 

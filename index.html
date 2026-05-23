@@ -127,7 +127,9 @@
   // Показываем подсказку только на Android в Telegram
   if (isAndroid && isTelegram) {
     const hint = document.getElementById('android-hint');
-    hint.innerHTML = '<button onclick="openExternal()" style="margin-top:4px;padding:10px 20px;background:#e63946;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;width:100%;">🌐 ' + t.openExternal + '</button>';
+    const btnLabels = {ru:'Открыть для полного экрана',bg:'Отвори за цял екран',en:'Open for fullscreen',de:'Vollbild im Browser',fr:'Plein écran navigateur',es:'Pantalla completa',uk:'Відкрити повний екран',tr:'Tam ekran aç'};
+    const btnLabel = btnLabels[lang] || btnLabels.en;
+    hint.innerHTML = '<button onclick="openExternal()" style="margin-top:4px;padding:10px 20px;background:#e63946;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;width:100%;">🌐 ' + btnLabel + '</button>';
     hint.style.display = 'block';
   }
 

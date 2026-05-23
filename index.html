@@ -113,12 +113,8 @@
 
   function openExternal() {
     const url = 'https://varenik-ai.github.io/nova-tv-app/';
-    // intent:// открывает Chrome напрямую минуя встроенный браузер
-    const intentUrl = 'intent://' + url.replace('https://', '') + '#Intent;scheme=https;package=com.android.chrome;end';
-    if (isAndroid) {
-      window.location.href = intentUrl;
-    } else if (window.Telegram && Telegram.WebApp.openLink) {
-      Telegram.WebApp.openLink(url, { try_instant_view: false });
+    if (window.Telegram && Telegram.WebApp.openLink) {
+      Telegram.WebApp.openLink(url);
     } else {
       window.open(url, '_blank');
     }

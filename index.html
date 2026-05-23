@@ -112,9 +112,9 @@
   const EXTERNAL_URL = 'https://varenik-ai.github.io/nova-tv-app/';
 
   function openExternal() {
-    const url = 'https://varenik-ai.github.io/nova-tv-app/';
+    // Используем pages.dev — другой домен вызывает диалог Telegram
+    const url = 'https://nova-tv-app.pages.dev/';
     if (window.Telegram && Telegram.WebApp.openLink) {
-      // try_instant_view:false форсирует внешний браузер
       Telegram.WebApp.openLink(url, {try_instant_view: false});
     } else {
       window.open(url, '_blank');

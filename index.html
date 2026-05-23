@@ -32,20 +32,18 @@
     #video-container.fullscreen {
       position: fixed;
       top: 0; left: 0;
-      width: 100vw;
-      height: 100vh;
+      width: 100vw; height: 100vh;
       max-width: 100vw;
       border-radius: 0;
       z-index: 9999;
     }
-    video { width: 100%; height: 100%; display: block; object-fit: contain; }
+    video { width: 100%; display: block; background: #000; }
+    #video-container.fullscreen video { height: 100vh; object-fit: contain; }
     #fs-btn {
       position: absolute;
-      bottom: 10px;
-      right: 10px;
+      bottom: 10px; right: 10px;
       background: rgba(0,0,0,0.6);
-      border: none;
-      color: white;
+      border: none; color: white;
       font-size: 20px;
       padding: 6px 10px;
       border-radius: 6px;
@@ -57,17 +55,35 @@
     @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.2} }
     #reload-btn { margin-top: 12px; padding: 10px 28px; background: #e63946; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; display: none; }
     #unmute-btn { margin-top: 12px; padding: 10px 24px; background: #e63946; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; display: none; }
+    #android-hint {
+      display: none;
+      margin-top: 14px;
+      padding: 10px 16px;
+      background: #1a1a2e;
+      border: 1px solid #333;
+      border-radius: 10px;
+      font-size: 12px;
+      color: #aaa;
+      text-align: center;
+      max-width: 340px;
+    }
+    #android-hint a {
+      color: #e63946;
+      text-decoration: none;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
 <div class="logo" id="logo">NOVA <span>TV</span></div>
 <div id="video-container">
   <video id="video" controls autoplay muted playsinline webkit-playsinline airplay="allow"></video>
-  <button id="fs-btn" onclick="toggleFullscreen(event)">⛶</button>
+  <button id="fs-btn" onclick="toggleFullscreen()">⛶</button>
 </div>
 <div id="status"><span class="dot"></span>...</div>
 <button id="reload-btn" onclick="init()">🔄</button>
 <button id="unmute-btn" onclick="unmute()">🔊</button>
+<div id="android-hint" id="android-hint"></div>
 
 <script>
   if (window.Telegram && window.Telegram.WebApp) {
@@ -75,15 +91,19 @@
     Telegram.WebApp.expand();
   }
 
+  const isAndroid = /android/i.test(navigator.userAgent);
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isTelegram = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.platform !== 'unknown';
+
   const TRANSLATIONS = {
-    ru: { loading:'Получаем поток...', connecting:'Подключение...', live:'Nova TV — прямой эфир 🔴', pressPlay:'Нажмите ▶ для воспроизведения', errorStream:'Ошибка — переподключаемся...', errorUrl:'Не удалось получить URL', errorServer:'Ошибка сервера', reconnect:'🔄 Переподключиться', unmute:'🔊 Включить звук' },
-    bg: { loading:'Зареждаме...', connecting:'Свързване...', live:'Nova TV — на живо 🔴', pressPlay:'Натиснете ▶', errorStream:'Грешка — свързваме...', errorUrl:'Неуспешно', errorServer:'Грешка', reconnect:'🔄 Свържи отново', unmute:'🔊 Включи звук' },
-    en: { loading:'Loading stream...', connecting:'Connecting...', live:'Nova TV — Live 🔴', pressPlay:'Press ▶ to play', errorStream:'Error — reconnecting...', errorUrl:'Failed to get URL', errorServer:'Server error', reconnect:'🔄 Reconnect', unmute:'🔊 Unmute' },
-    de: { loading:'Laden...', connecting:'Verbinden...', live:'Nova TV — Live 🔴', pressPlay:'▶ drücken', errorStream:'Fehler...', errorUrl:'URL Fehler', errorServer:'Serverfehler', reconnect:'🔄 Neu verbinden', unmute:'🔊 Ton an' },
-    fr: { loading:'Chargement...', connecting:'Connexion...', live:'Nova TV — En direct 🔴', pressPlay:'Appuyez ▶', errorStream:'Erreur...', errorUrl:'URL introuvable', errorServer:'Erreur serveur', reconnect:'🔄 Reconnecter', unmute:'🔊 Activer le son' },
-    es: { loading:'Cargando...', connecting:'Conectando...', live:'Nova TV — En vivo 🔴', pressPlay:'Presione ▶', errorStream:'Error...', errorUrl:'URL fallida', errorServer:'Error servidor', reconnect:'🔄 Reconectar', unmute:'🔊 Activar sonido' },
-    uk: { loading:'Отримуємо...', connecting:'Підключення...', live:'Nova TV — прямий ефір 🔴', pressPlay:'Натисніть ▶', errorStream:'Помилка...', errorUrl:'URL не знайдено', errorServer:'Помилка сервера', reconnect:'🔄 Перепідключитись', unmute:'🔊 Увімкнути звук' },
-    tr: { loading:'Yükleniyor...', connecting:'Bağlanıyor...', live:'Nova TV — Canlı 🔴', pressPlay:'▶ basın', errorStream:'Hata...', errorUrl:'URL alınamadı', errorServer:'Sunucu hatası', reconnect:'🔄 Yeniden Bağlan', unmute:'🔊 Sesi aç' },
+    ru: { loading:'Получаем поток...', connecting:'Подключение...', live:'Nova TV — прямой эфир 🔴', pressPlay:'Нажмите ▶ для воспроизведения', errorStream:'Ошибка — переподключаемся...', errorUrl:'Не удалось получить URL', errorServer:'Ошибка сервера', reconnect:'🔄 Переподключиться', unmute:'🔊 Включить звук', androidHint:'📱 Для полного экрана и фонового воспроизведения — <a href="https://varenik-ai.github.io/nova-tv-app/" target="_blank">открыть в браузере</a>' },
+    bg: { loading:'Зареждаме...', connecting:'Свързване...', live:'Nova TV — на живо 🔴', pressPlay:'Натиснете ▶', errorStream:'Грешка...', errorUrl:'Неуспешно', errorServer:'Грешка', reconnect:'🔄 Свържи отново', unmute:'🔊 Включи звук', androidHint:'📱 За цял екран и фоново възпроизвеждане — <a href="https://varenik-ai.github.io/nova-tv-app/" target="_blank">отвори в браузър</a>' },
+    en: { loading:'Loading...', connecting:'Connecting...', live:'Nova TV — Live 🔴', pressPlay:'Press ▶ to play', errorStream:'Error — reconnecting...', errorUrl:'Failed to get URL', errorServer:'Server error', reconnect:'🔄 Reconnect', unmute:'🔊 Unmute', androidHint:'📱 For fullscreen & background — <a href="https://varenik-ai.github.io/nova-tv-app/" target="_blank">open in browser</a>' },
+    de: { loading:'Laden...', connecting:'Verbinden...', live:'Nova TV — Live 🔴', pressPlay:'▶ drücken', errorStream:'Fehler...', errorUrl:'URL Fehler', errorServer:'Serverfehler', reconnect:'🔄 Neu verbinden', unmute:'🔊 Ton an', androidHint:'📱 Vollbild & Hintergrund — <a href="https://varenik-ai.github.io/nova-tv-app/" target="_blank">Im Browser öffnen</a>' },
+    fr: { loading:'Chargement...', connecting:'Connexion...', live:'Nova TV — En direct 🔴', pressPlay:'Appuyez ▶', errorStream:'Erreur...', errorUrl:'URL introuvable', errorServer:'Erreur serveur', reconnect:'🔄 Reconnecter', unmute:'🔊 Son', androidHint:'📱 Plein écran & fond — <a href="https://varenik-ai.github.io/nova-tv-app/" target="_blank">ouvrir dans le navigateur</a>' },
+    es: { loading:'Cargando...', connecting:'Conectando...', live:'Nova TV — En vivo 🔴', pressPlay:'Presione ▶', errorStream:'Error...', errorUrl:'URL fallida', errorServer:'Error servidor', reconnect:'🔄 Reconectar', unmute:'🔊 Sonido', androidHint:'📱 Pantalla completa — <a href="https://varenik-ai.github.io/nova-tv-app/" target="_blank">abrir en navegador</a>' },
+    uk: { loading:'Отримуємо...', connecting:'Підключення...', live:'Nova TV — прямий ефір 🔴', pressPlay:'Натисніть ▶', errorStream:'Помилка...', errorUrl:'URL не знайдено', errorServer:'Помилка сервера', reconnect:'🔄 Перепідключитись', unmute:'🔊 Звук', androidHint:'📱 Повний екран — <a href="https://varenik-ai.github.io/nova-tv-app/" target="_blank">відкрити у браузері</a>' },
+    tr: { loading:'Yükleniyor...', connecting:'Bağlanıyor...', live:'Nova TV — Canlı 🔴', pressPlay:'▶ basın', errorStream:'Hata...', errorUrl:'URL alınamadı', errorServer:'Sunucu hatası', reconnect:'🔄 Yeniden Bağlan', unmute:'🔊 Ses', androidHint:'📱 Tam ekran — <a href="https://varenik-ai.github.io/nova-tv-app/" target="_blank">tarayıcıda aç</a>' },
   };
 
   function getLang() {
@@ -101,40 +121,39 @@
   document.getElementById('reload-btn').textContent = t.reconnect;
   document.getElementById('unmute-btn').textContent = t.unmute;
 
+  // Показываем подсказку только на Android в Telegram
+  if (isAndroid && isTelegram) {
+    const hint = document.getElementById('android-hint');
+    hint.innerHTML = t.androidHint;
+    hint.style.display = 'block';
+    // Скрываем кнопку fullscreen на Android — она не работает
+    document.getElementById('fs-btn').style.display = 'none';
+  }
+
   const STREAM_API = 'https://nova-proxy-eight.vercel.app/api/stream';
   const PROXY_BASE = 'https://nova-proxy-eight.vercel.app/api/proxy?url=';
 
-  const video      = document.getElementById('video');
-  const container  = document.getElementById('video-container');
-  const status     = document.getElementById('status');
-  const reloadBtn  = document.getElementById('reload-btn');
-  const unmuteBtn  = document.getElementById('unmute-btn');
-  const logo       = document.getElementById('logo');
-  const fsBtn      = document.getElementById('fs-btn');
+  const video     = document.getElementById('video');
+  const container = document.getElementById('video-container');
+  const status    = document.getElementById('status');
+  const reloadBtn = document.getElementById('reload-btn');
+  const unmuteBtn = document.getElementById('unmute-btn');
+  const logo      = document.getElementById('logo');
+  const fsBtn     = document.getElementById('fs-btn');
   let hls;
   let isFs = false;
 
-  function toggleFullscreen(event) {
-    // Пробуем нативный Fullscreen API
+  function toggleFullscreen() {
     if (!isFs) {
-      if (container.requestFullscreen) {
-        container.requestFullscreen();
-      } else if (container.webkitRequestFullscreen) {
-        container.webkitRequestFullscreen();
-      } else if (video.webkitEnterFullscreen) {
-        // iPhone Safari
-        video.webkitEnterFullscreen();
-        return;
-      } else {
-        // Fallback — CSS fullscreen
+      if (container.requestFullscreen) container.requestFullscreen();
+      else if (container.webkitRequestFullscreen) container.webkitRequestFullscreen();
+      else if (video.webkitEnterFullscreen) { video.webkitEnterFullscreen(); return; }
+      else {
         container.classList.add('fullscreen');
         logo.style.display = 'none';
         status.style.display = 'none';
-        reloadBtn.style.display = 'none';
-        unmuteBtn.style.display = 'none';
         fsBtn.textContent = '✕';
         isFs = true;
-        return;
       }
     } else {
       if (document.exitFullscreen) document.exitFullscreen();
@@ -145,12 +164,10 @@
         status.style.display = '';
         fsBtn.textContent = '⛶';
         isFs = false;
-        return;
       }
     }
   }
 
-  // Слушаем нативный fullscreen
   document.addEventListener('fullscreenchange', () => {
     isFs = !!document.fullscreenElement;
     fsBtn.textContent = isFs ? '✕' : '⛶';

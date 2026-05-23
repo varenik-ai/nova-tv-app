@@ -20,25 +20,8 @@
     }
     .logo { font-size: 28px; font-weight: 900; color: #e63946; letter-spacing: 2px; margin-bottom: 16px; text-transform: uppercase; }
     .logo span { color: white; }
-    #video-container {
-      width: 100%;
-      max-width: 900px;
-      background: #000;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-      position: relative;
-    }
-    #video-container.fullscreen {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      max-width: 100vw;
-      border-radius: 0;
-      z-index: 9999;
-    }
+    #video-container { width: 100%; max-width: 900px; background: #000; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.6); }
     video { width: 100%; display: block; background: #000; }
-    #video-container.fullscreen video { height: 100vh; object-fit: contain; }
     #status { margin-top: 14px; font-size: 13px; color: #888; text-align: center; }
     .dot { display: inline-block; width: 8px; height: 8px; background: #e63946; border-radius: 50%; margin-right: 6px; animation: pulse 1.2s infinite; }
     @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.2} }
@@ -47,7 +30,7 @@
     #android-hint {
       display: none;
       margin-top: 14px;
-      padding: 10px 16px;
+      padding: 12px 16px;
       background: #1a1a2e;
       border: 1px solid #333;
       border-radius: 10px;
@@ -55,12 +38,9 @@
       color: #aaa;
       text-align: center;
       max-width: 340px;
+      line-height: 1.8;
     }
-    #android-hint a {
-      color: #e63946;
-      text-decoration: none;
-      font-weight: bold;
-    }
+    #android-hint b { color: white; }
   </style>
 </head>
 <body>
@@ -71,7 +51,7 @@
 <div id="status"><span class="dot"></span>...</div>
 <button id="reload-btn" onclick="init()">🔄</button>
 <button id="unmute-btn" onclick="unmute()">🔊</button>
-<div id="android-hint" id="android-hint"></div>
+<div id="android-hint"></div>
 
 <script>
   if (window.Telegram && window.Telegram.WebApp) {
@@ -80,18 +60,25 @@
   }
 
   const isAndroid = /android/i.test(navigator.userAgent);
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
   const isTelegram = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.platform !== 'unknown';
 
   const TRANSLATIONS = {
-    ru: { loading:'Получаем поток...', connecting:'Подключение...', live:'Nova TV — прямой эфир 🔴', pressPlay:'Нажмите ▶ для воспроизведения', errorStream:'Ошибка — переподключаемся...', errorUrl:'Не удалось получить URL', errorServer:'Ошибка сервера', reconnect:'🔄 Переподключиться', unmute:'🔊 Включить звук', androidHint:'📱 Для полного экрана и фонового воспроизведения — <a href="https://nova-tv-app.pages.dev/" target="_blank">открыть в браузере</a>' },
-    bg: { loading:'Зареждаме...', connecting:'Свързване...', live:'Nova TV — на живо 🔴', pressPlay:'Натиснете ▶', errorStream:'Грешка...', errorUrl:'Неуспешно', errorServer:'Грешка', reconnect:'🔄 Свържи отново', unmute:'🔊 Включи звук', androidHint:'📱 За цял екран и фоново възпроизвеждане — <a href="https://nova-tv-app.pages.dev/" target="_blank">отвори в браузър</a>' },
-    en: { loading:'Loading...', connecting:'Connecting...', live:'Nova TV — Live 🔴', pressPlay:'Press ▶ to play', errorStream:'Error — reconnecting...', errorUrl:'Failed to get URL', errorServer:'Server error', reconnect:'🔄 Reconnect', unmute:'🔊 Unmute', androidHint:'📱 For fullscreen & background — <a href="https://nova-tv-app.pages.dev/" target="_blank">open in browser</a>' },
-    de: { loading:'Laden...', connecting:'Verbinden...', live:'Nova TV — Live 🔴', pressPlay:'▶ drücken', errorStream:'Fehler...', errorUrl:'URL Fehler', errorServer:'Serverfehler', reconnect:'🔄 Neu verbinden', unmute:'🔊 Ton an', androidHint:'📱 Vollbild & Hintergrund — <a href="https://nova-tv-app.pages.dev/" target="_blank">Im Browser öffnen</a>' },
-    fr: { loading:'Chargement...', connecting:'Connexion...', live:'Nova TV — En direct 🔴', pressPlay:'Appuyez ▶', errorStream:'Erreur...', errorUrl:'URL introuvable', errorServer:'Erreur serveur', reconnect:'🔄 Reconnecter', unmute:'🔊 Son', androidHint:'📱 Plein écran & fond — <a href="https://nova-tv-app.pages.dev/" target="_blank">ouvrir dans le navigateur</a>' },
-    es: { loading:'Cargando...', connecting:'Conectando...', live:'Nova TV — En vivo 🔴', pressPlay:'Presione ▶', errorStream:'Error...', errorUrl:'URL fallida', errorServer:'Error servidor', reconnect:'🔄 Reconectar', unmute:'🔊 Sonido', androidHint:'📱 Pantalla completa — <a href="https://nova-tv-app.pages.dev/" target="_blank">abrir en navegador</a>' },
-    uk: { loading:'Отримуємо...', connecting:'Підключення...', live:'Nova TV — прямий ефір 🔴', pressPlay:'Натисніть ▶', errorStream:'Помилка...', errorUrl:'URL не знайдено', errorServer:'Помилка сервера', reconnect:'🔄 Перепідключитись', unmute:'🔊 Звук', androidHint:'📱 Повний екран — <a href="https://nova-tv-app.pages.dev/" target="_blank">відкрити у браузері</a>' },
-    tr: { loading:'Yükleniyor...', connecting:'Bağlanıyor...', live:'Nova TV — Canlı 🔴', pressPlay:'▶ basın', errorStream:'Hata...', errorUrl:'URL alınamadı', errorServer:'Sunucu hatası', reconnect:'🔄 Yeniden Bağlan', unmute:'🔊 Ses', androidHint:'📱 Tam ekran — <a href="https://nova-tv-app.pages.dev/" target="_blank">tarayıcıda aç</a>' },
+    ru: { loading:'Получаем поток...', connecting:'Подключение...', live:'Nova TV — прямой эфир 🔴', pressPlay:'Нажмите ▶ для воспроизведения', errorStream:'Ошибка — переподключаемся...', errorUrl:'Не удалось получить URL', errorServer:'Ошибка сервера', reconnect:'🔄 Переподключиться', unmute:'🔊 Включить звук',
+      androidHint:'📺 Для полного экрана:<br><b>⋮ → Открыть в браузере</b><br><br>🎧 Для фонового звука:<br><b>⋮ → Открыть в браузере</b>' },
+    bg: { loading:'Зареждаме...', connecting:'Свързване...', live:'Nova TV — на живо 🔴', pressPlay:'Натиснете ▶', errorStream:'Грешка...', errorUrl:'Неуспешно', errorServer:'Грешка', reconnect:'🔄 Свържи отново', unmute:'🔊 Включи звук',
+      androidHint:'📺 За цял екран:<br><b>⋮ → Отвори в браузър</b><br><br>🎧 За фоново аудио:<br><b>⋮ → Отвори в браузър</b>' },
+    en: { loading:'Loading...', connecting:'Connecting...', live:'Nova TV — Live 🔴', pressPlay:'Press ▶ to play', errorStream:'Error — reconnecting...', errorUrl:'Failed to get URL', errorServer:'Server error', reconnect:'🔄 Reconnect', unmute:'🔊 Unmute',
+      androidHint:'📺 For fullscreen:<br><b>⋮ → Open in browser</b><br><br>🎧 For background audio:<br><b>⋮ → Open in browser</b>' },
+    de: { loading:'Laden...', connecting:'Verbinden...', live:'Nova TV — Live 🔴', pressPlay:'▶ drücken', errorStream:'Fehler...', errorUrl:'URL Fehler', errorServer:'Serverfehler', reconnect:'🔄 Neu verbinden', unmute:'🔊 Ton an',
+      androidHint:'📺 Vollbild:<br><b>⋮ → Im Browser öffnen</b><br><br>🎧 Hintergrund Audio:<br><b>⋮ → Im Browser öffnen</b>' },
+    fr: { loading:'Chargement...', connecting:'Connexion...', live:'Nova TV — En direct 🔴', pressPlay:'Appuyez ▶', errorStream:'Erreur...', errorUrl:'URL introuvable', errorServer:'Erreur serveur', reconnect:'🔄 Reconnecter', unmute:'🔊 Son',
+      androidHint:'📺 Plein écran:<br><b>⋮ → Ouvrir dans le navigateur</b><br><br>🎧 Audio fond:<br><b>⋮ → Ouvrir dans le navigateur</b>' },
+    es: { loading:'Cargando...', connecting:'Conectando...', live:'Nova TV — En vivo 🔴', pressPlay:'Presione ▶', errorStream:'Error...', errorUrl:'URL fallida', errorServer:'Error servidor', reconnect:'🔄 Reconectar', unmute:'🔊 Sonido',
+      androidHint:'📺 Pantalla completa:<br><b>⋮ → Abrir en navegador</b><br><br>🎧 Audio fondo:<br><b>⋮ → Abrir en navegador</b>' },
+    uk: { loading:'Отримуємо...', connecting:'Підключення...', live:'Nova TV — прямий ефір 🔴', pressPlay:'Натисніть ▶', errorStream:'Помилка...', errorUrl:'URL не знайдено', errorServer:'Помилка сервера', reconnect:'🔄 Перепідключитись', unmute:'🔊 Звук',
+      androidHint:'📺 Повний екран:<br><b>⋮ → Відкрити у браузері</b><br><br>🎧 Фоновий звук:<br><b>⋮ → Відкрити у браузері</b>' },
+    tr: { loading:'Yükleniyor...', connecting:'Bağlanıyor...', live:'Nova TV — Canlı 🔴', pressPlay:'▶ basın', errorStream:'Hata...', errorUrl:'URL alınamadı', errorServer:'Sunucu hatası', reconnect:'🔄 Yeniden Bağlan', unmute:'🔊 Ses',
+      androidHint:'📺 Tam ekran:<br><b>⋮ → Tarayıcıda aç</b><br><br>🎧 Arka plan sesi:<br><b>⋮ → Tarayıcıda aç</b>' },
   };
 
   function getLang() {
@@ -109,26 +96,10 @@
   document.getElementById('reload-btn').textContent = t.reconnect;
   document.getElementById('unmute-btn').textContent = t.unmute;
 
-  const EXTERNAL_URL = 'https://varenik-ai.github.io/nova-tv-app/';
-
-  function openExternal() {
-    const url = 'https://nova-tv-app.pages.dev/';
-    // Создаём временный элемент ссылки и кликаем
-    const a = document.createElement('a');
-    a.href = url;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  }
-
   // Показываем подсказку только на Android в Telegram
   if (isAndroid && isTelegram) {
     const hint = document.getElementById('android-hint');
-    const btnLabels = {ru:'Открыть для полного экрана',bg:'Отвори за цял екран',en:'Open for fullscreen',de:'Vollbild im Browser',fr:'Plein écran navigateur',es:'Pantalla completa',uk:'Відкрити повний екран',tr:'Tam ekran aç'};
-    const btnLabel = btnLabels[lang] || btnLabels.en;
-    hint.innerHTML = '<button onclick="openExternal()" style="margin-top:4px;padding:10px 20px;background:#e63946;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;width:100%;">🌐 ' + btnLabel + '</button>';
+    hint.innerHTML = t.androidHint;
     hint.style.display = 'block';
   }
 
@@ -136,68 +107,14 @@
   const PROXY_BASE = 'https://nova-proxy-eight.vercel.app/api/proxy?url=';
 
   const video     = document.getElementById('video');
-  const container = document.getElementById('video-container');
   const status    = document.getElementById('status');
   const reloadBtn = document.getElementById('reload-btn');
   const unmuteBtn = document.getElementById('unmute-btn');
-  const logo      = document.getElementById('logo');
   let hls;
-  let isFs = false;
-
-  function cssFullscreen() {
-    container.classList.add('fullscreen');
-    logo.style.display = 'none';
-    status.style.display = 'none';
-    fsBtn.textContent = '✕';
-    isFs = true;
-  }
-
-  function cssExitFullscreen() {
-    container.classList.remove('fullscreen');
-    logo.style.display = '';
-    status.style.display = '';
-    fsBtn.textContent = '⛶';
-    isFs = false;
-  }
-
-  function toggleFullscreen() {
-    if (!isFs) {
-      if (video.requestFullscreen) {
-        video.requestFullscreen().catch(() => cssFullscreen());
-      } else if (video.webkitRequestFullscreen) {
-        video.webkitRequestFullscreen().catch(() => cssFullscreen());
-      } else if (video.webkitEnterFullscreen) {
-        video.webkitEnterFullscreen();
-      } else {
-        cssFullscreen();
-      }
-    } else {
-      if (document.exitFullscreen) document.exitFullscreen();
-      else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-      else {
-        container.classList.remove('fullscreen');
-        logo.style.display = '';
-        status.style.display = '';
-        fsBtn.textContent = '⛶';
-        isFs = false;
-      }
-    }
-  }
-
-  document.addEventListener('fullscreenchange', () => {
-    isFs = !!document.fullscreenElement;
-    fsBtn.textContent = isFs ? '✕' : '⛶';
-    logo.style.display = isFs ? 'none' : '';
-    status.style.display = isFs ? 'none' : '';
-  });
-  document.addEventListener('webkitfullscreenchange', () => {
-    isFs = !!document.webkitFullscreenElement;
-    fsBtn.textContent = isFs ? '✕' : '⛶';
-  });
 
   function setStatus(key, isError) {
     const msg = t[key] || key;
-    status.innerHTML = isError ? `⚠️ ${msg}` : `<span class="dot"></span>${msg}`;
+    status.innerHTML = isError ? '⚠️ ' + msg : '<span class="dot"></span>' + msg;
     reloadBtn.style.display = isError ? 'block' : 'none';
   }
 

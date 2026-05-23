@@ -29,11 +29,28 @@
       box-shadow: 0 8px 32px rgba(0,0,0,0.6);
       position: relative;
     }
-    video {
-      width: 100%;
-      display: block;
-      /* Разрешаем полноэкранный режим */
-      -webkit-playsinline: none;
+    #video-container.fullscreen {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      max-width: 100vw;
+      border-radius: 0;
+      z-index: 9999;
+    }
+    video { width: 100%; height: 100%; display: block; object-fit: contain; }
+    #fs-btn {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.6);
+      border: none;
+      color: white;
+      font-size: 20px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      z-index: 10000;
     }
     #status { margin-top: 14px; font-size: 13px; color: #888; text-align: center; }
     .dot { display: inline-block; width: 8px; height: 8px; background: #e63946; border-radius: 50%; margin-right: 6px; animation: pulse 1.2s infinite; }
@@ -43,20 +60,10 @@
   </style>
 </head>
 <body>
-<div class="logo">NOVA <span>TV</span></div>
+<div class="logo" id="logo">NOVA <span>TV</span></div>
 <div id="video-container">
-  <video
-    id="video"
-    controls
-    autoplay
-    muted
-    playsinline
-    webkit-playsinline
-    x5-playsinline
-    x5-video-player-type="h5"
-    x5-video-player-fullscreen="true"
-    airplay="allow"
-  ></video>
+  <video id="video" controls autoplay muted playsinline webkit-playsinline airplay="allow"></video>
+  <button id="fs-btn" onclick="toggleFullscreen()">⛶</button>
 </div>
 <div id="status"><span class="dot"></span>...</div>
 <button id="reload-btn" onclick="init()">🔄</button>
@@ -97,11 +104,63 @@
   const STREAM_API = 'https://nova-proxy-eight.vercel.app/api/stream';
   const PROXY_BASE = 'https://nova-proxy-eight.vercel.app/api/proxy?url=';
 
-  const video     = document.getElementById('video');
-  const status    = document.getElementById('status');
-  const reloadBtn = document.getElementById('reload-btn');
-  const unmuteBtn = document.getElementById('unmute-btn');
+  const video      = document.getElementById('video');
+  const container  = document.getElementById('video-container');
+  const status     = document.getElementById('status');
+  const reloadBtn  = document.getElementById('reload-btn');
+  const unmuteBtn  = document.getElementById('unmute-btn');
+  const logo       = document.getElementById('logo');
+  const fsBtn      = document.getElementById('fs-btn');
   let hls;
+  let isFs = false;
+
+  function toggleFullscreen() {
+    // Пробуем нативный Fullscreen API
+    if (!isFs) {
+      if (container.requestFullscreen) {
+        container.requestFullscreen();
+      } else if (container.webkitRequestFullscreen) {
+        container.webkitRequestFullscreen();
+      } else if (video.webkitEnterFullscreen) {
+        // iPhone Safari
+        video.webkitEnterFullscreen();
+        return;
+      } else {
+        // Fallback — CSS fullscreen
+        container.classList.add('fullscreen');
+        logo.style.display = 'none';
+        status.style.display = 'none';
+        reloadBtn.style.display = 'none';
+        unmuteBtn.style.display = 'none';
+        fsBtn.textContent = '✕';
+        isFs = true;
+        return;
+      }
+    } else {
+      if (document.exitFullscreen) document.exitFullscreen();
+      else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+      else {
+        container.classList.remove('fullscreen');
+        logo.style.display = '';
+        status.style.display = '';
+        fsBtn.textContent = '⛶';
+        isFs = false;
+        return;
+      }
+    }
+  }
+
+  // Слушаем нативный fullscreen
+  document.addEventListener('fullscreenchange', () => {
+    isFs = !!document.fullscreenElement;
+    fsBtn.textContent = isFs ? '✕' : '⛶';
+    logo.style.display = isFs ? 'none' : '';
+    status.style.display = isFs ? 'none' : '';
+  });
+  document.addEventListener('webkitfullscreenchange', () => {
+    isFs = !!document.webkitFullscreenElement;
+    fsBtn.textContent = isFs ? '✕' : '⛶';
+  });
 
   function setStatus(key, isError) {
     const msg = t[key] || key;
@@ -140,16 +199,6 @@
     } catch(e) {}
   }
 
-  // Продолжаем играть когда страница скрыта
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') {
-      // Не останавливаем видео
-      if (video.paused) return;
-      // Переключаем на аудио режим
-      navigator.mediaSession && navigator.mediaSession.setActionHandler('play', () => video.play());
-    }
-  });
-
   function loadStream(url) {
     const proxiedUrl = PROXY_BASE + encodeURIComponent(url);
     if (hls) hls.destroy();
@@ -157,11 +206,7 @@
     unmuteBtn.style.display = 'none';
 
     if (Hls.isSupported()) {
-      hls = new Hls({
-        liveSyncDurationCount: 3,
-        enableWorker: true,
-        lowLatencyMode: false,
-      });
+      hls = new Hls({ liveSyncDurationCount: 3, enableWorker: true });
       hls.loadSource(proxiedUrl);
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -180,7 +225,6 @@
         }
       });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      // Safari — нативный HLS, лучшее фоновое воспроизведение на iPhone
       video.src = proxiedUrl;
       video.muted = true;
       video.play().then(() => {

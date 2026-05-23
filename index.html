@@ -63,7 +63,7 @@
 <div class="logo" id="logo">NOVA <span>TV</span></div>
 <div id="video-container">
   <video id="video" controls autoplay muted playsinline webkit-playsinline airplay="allow"></video>
-  <button id="fs-btn" onclick="toggleFullscreen()">⛶</button>
+  <button id="fs-btn" onclick="toggleFullscreen(event)">⛶</button>
 </div>
 <div id="status"><span class="dot"></span>...</div>
 <button id="reload-btn" onclick="init()">🔄</button>
@@ -114,7 +114,7 @@
   let hls;
   let isFs = false;
 
-  function toggleFullscreen() {
+  function toggleFullscreen(event) {
     // Пробуем нативный Fullscreen API
     if (!isFs) {
       if (container.requestFullscreen) {

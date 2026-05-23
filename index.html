@@ -84,11 +84,38 @@
 
   function setupMediaSession() {
     if (!('mediaSession' in navigator)) return;
-    navigator.mediaSession.metadata = new MediaMetadata({ title: 'Nova TV Bulgaria', artist: 'Live 🔴', album: 'Nova TV' });
-    navigator.mediaSession.setActionHandler('play', () => video.play());
-    navigator.mediaSession.setActionHandler('pause', () => video.pause());
-    navigator.mediaSession.setActionHandler('stop', () => video.pause());
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: 'Nova TV Bulgaria',
+      artist: 'Live 🔴',
+      album: 'Nova TV',
+      artwork: [{ src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Nova_TV_Bulgaria_Logo.svg/512px-Nova_TV_Bulgaria_Logo.svg.png', sizes: '512x512', type: 'image/png' }]
+    });
+    navigator.mediaSession.setActionHandler('play', () => { video.play(); navigator.mediaSession.playbackState = 'playing'; });
+    navigator.mediaSession.setActionHandler('pause', () => { video.pause(); navigator.mediaSession.playbackState = 'paused'; });
+    navigator.mediaSession.setActionHandler('stop', () => { video.pause(); navigator.mediaSession.playbackState = 'paused'; });
+    navigator.mediaSession.playbackState = 'playing';
   }
+
+  // Не останавливаем воспроизведение при скрытии страницы
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      if (!video.paused) {
+        // Принудительно продолжаем воспроизведение
+        video.play().catch(() => {});
+      }
+    }
+  });
+
+  // Возобновляем если остановилось
+  video.addEventListener('pause', () => {
+    if (document.visibilityState === 'hidden') {
+      setTimeout(() => {
+        if (video.paused && document.visibilityState === 'hidden') {
+          video.play().catch(() => {});
+        }
+      }, 500);
+    }
+  });
 
   async function requestWakeLock() {
     try {

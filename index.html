@@ -114,7 +114,8 @@
   function openExternal() {
     const url = 'https://varenik-ai.github.io/nova-tv-app/';
     if (window.Telegram && Telegram.WebApp.openLink) {
-      Telegram.WebApp.openLink(url);
+      // try_instant_view:false форсирует внешний браузер
+      Telegram.WebApp.openLink(url, {try_instant_view: false});
     } else {
       window.open(url, '_blank');
     }
@@ -286,3 +287,4 @@
 </body>
 </html>
  
+суббота, 23 мая 2026 г. 11:51:13 (EEST)

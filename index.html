@@ -16,18 +16,28 @@
     #status { margin-top: 14px; font-size: 13px; color: #888; text-align: center; }
     .dot { display: inline-block; width: 8px; height: 8px; background: #e63946; border-radius: 50%; margin-right: 6px; animation: pulse 1.2s infinite; }
     @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.2} }
-    #reload-btn { margin-top: 12px; padding: 10px 28px; background: #e63946; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; display: none; }
-    #unmute-btn { margin-top: 12px; padding: 10px 24px; background: #e63946; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; display: none; }
+    .btn { margin-top: 12px; padding: 10px 24px; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; display: none; width: 90%; max-width: 340px; }
+    #reload-btn { background: #333; }
+    #unmute-btn { background: #e63946; }
+    #fullscreen-btn { background: #1a1a2e; border: 1px solid #444; display: block; margin-top: 12px; }
   </style>
 </head>
 <body>
 <div class="logo">NOVA <span>TV</span></div>
 <div id="video-container">
-  <video id="video" controls autoplay muted playsinline webkit-playsinline airplay="allow"></video>
+  <video
+    id="video"
+    controls
+    autoplay
+    playsinline
+    webkit-playsinline
+    airplay="allow"
+  ></video>
 </div>
 <div id="status"><span class="dot"></span>...</div>
-<button id="reload-btn" onclick="init()">🔄</button>
-<button id="unmute-btn" onclick="unmute()">🔊</button>
+<button id="reload-btn" class="btn" onclick="init()">🔄</button>
+<button id="unmute-btn" class="btn" onclick="unmute()">🔊</button>
+<button id="fullscreen-btn" class="btn" onclick="openFullscreen()">🔳</button>
 
 <script>
   if (window.Telegram && window.Telegram.WebApp) {
@@ -35,53 +45,46 @@
     Telegram.WebApp.expand();
   }
 
-  const TRANSLATIONS = {
-    ru: { loading:'Получаем поток...', connecting:'Подключение...', live:'Nova TV — прямой эфир 🔴', pressPlay:'Нажмите ▶', errorStream:'Ошибка — переподключаемся...', errorUrl:'Не удалось получить URL', errorServer:'Ошибка сервера', reconnect:'🔄 Переподключиться', unmute:'🔊 Включить звук' },
-    bg: { loading:'Зареждаме...', connecting:'Свързване...', live:'Nova TV — на живо 🔴', pressPlay:'Натиснете ▶', errorStream:'Грешка...', errorUrl:'Неуспешно', errorServer:'Грешка', reconnect:'🔄 Свържи отново', unmute:'🔊 Включи звук' },
-    en: { loading:'Loading...', connecting:'Connecting...', live:'Nova TV — Live 🔴', pressPlay:'Press ▶', errorStream:'Error — reconnecting...', errorUrl:'Failed to get URL', errorServer:'Server error', reconnect:'🔄 Reconnect', unmute:'🔊 Unmute' },
-    de: { loading:'Laden...', connecting:'Verbinden...', live:'Nova TV — Live 🔴', pressPlay:'▶ drücken', errorStream:'Fehler...', errorUrl:'URL Fehler', errorServer:'Serverfehler', reconnect:'🔄 Neu verbinden', unmute:'🔊 Ton an' },
-    fr: { loading:'Chargement...', connecting:'Connexion...', live:'Nova TV — En direct 🔴', pressPlay:'Appuyez ▶', errorStream:'Erreur...', errorUrl:'URL introuvable', errorServer:'Erreur serveur', reconnect:'🔄 Reconnecter', unmute:'🔊 Son' },
-    es: { loading:'Cargando...', connecting:'Conectando...', live:'Nova TV — En vivo 🔴', pressPlay:'Presione ▶', errorStream:'Error...', errorUrl:'URL fallida', errorServer:'Error servidor', reconnect:'🔄 Reconectar', unmute:'🔊 Sonido' },
-    uk: { loading:'Отримуємо...', connecting:'Підключення...', live:'Nova TV — прямий ефір 🔴', pressPlay:'Натисніть ▶', errorStream:'Помилка...', errorUrl:'URL не знайдено', errorServer:'Помилка сервера', reconnect:'🔄 Перепідключитись', unmute:'🔊 Звук' },
-    tr: { loading:'Yükleniyor...', connecting:'Bağlanıyor...', live:'Nova TV — Canlı 🔴', pressPlay:'▶ basın', errorStream:'Hata...', errorUrl:'URL alınamadı', errorServer:'Sunucu hatası', reconnect:'🔄 Yeniden Bağlan', unmute:'🔊 Ses' },
+  const T = {
+    ru: { loading:'Получаем поток...', connecting:'Подключение...', live:'Nova TV — прямой эфир 🔴', pressPlay:'Нажмите ▶', errorStream:'Ошибка — переподключаемся...', errorUrl:'Не удалось получить URL', errorServer:'Ошибка сервера', reconnect:'🔄 Переподключиться', unmute:'🔊 Включить звук', fullscreen:'🔳 Полный экран' },
+    bg: { loading:'Зареждаме...', connecting:'Свързване...', live:'Nova TV — на живо 🔴', pressPlay:'Натиснете ▶', errorStream:'Грешка...', errorUrl:'Неуспешно', errorServer:'Грешка', reconnect:'🔄 Свържи отново', unmute:'🔊 Включи звук', fullscreen:'🔳 Цял екран' },
+    en: { loading:'Loading...', connecting:'Connecting...', live:'Nova TV — Live 🔴', pressPlay:'Press ▶', errorStream:'Error — reconnecting...', errorUrl:'Failed to get URL', errorServer:'Server error', reconnect:'🔄 Reconnect', unmute:'🔊 Unmute', fullscreen:'🔳 Fullscreen' },
+    de: { loading:'Laden...', connecting:'Verbinden...', live:'Nova TV — Live 🔴', pressPlay:'▶ drücken', errorStream:'Fehler...', errorUrl:'URL Fehler', errorServer:'Serverfehler', reconnect:'🔄 Neu verbinden', unmute:'🔊 Ton an', fullscreen:'🔳 Vollbild' },
+    fr: { loading:'Chargement...', connecting:'Connexion...', live:'Nova TV — En direct 🔴', pressPlay:'Appuyez ▶', errorStream:'Erreur...', errorUrl:'URL introuvable', errorServer:'Erreur serveur', reconnect:'🔄 Reconnecter', unmute:'🔊 Son', fullscreen:'🔳 Plein écran' },
+    es: { loading:'Cargando...', connecting:'Conectando...', live:'Nova TV — En vivo 🔴', pressPlay:'Presione ▶', errorStream:'Error...', errorUrl:'URL fallida', errorServer:'Error servidor', reconnect:'🔄 Reconectar', unmute:'🔊 Sonido', fullscreen:'🔳 Pantalla completa' },
+    uk: { loading:'Отримуємо...', connecting:'Підключення...', live:'Nova TV — прямий ефір 🔴', pressPlay:'Натисніть ▶', errorStream:'Помилка...', errorUrl:'URL не знайдено', errorServer:'Помилка сервера', reconnect:'🔄 Перепідключитись', unmute:'🔊 Звук', fullscreen:'🔳 Повний екран' },
+    tr: { loading:'Yükleniyor...', connecting:'Bağlanıyor...', live:'Nova TV — Canlı 🔴', pressPlay:'▶ basın', errorStream:'Hata...', errorUrl:'URL alınamadı', errorServer:'Sunucu hatası', reconnect:'🔄 Yeniden Bağlan', unmute:'🔊 Ses', fullscreen:'🔳 Tam ekran' },
   };
 
   function getLang() {
     try {
       const tgLang = Telegram.WebApp.initDataUnsafe?.user?.language_code;
-      if (tgLang) { const s = tgLang.split('-')[0].toLowerCase(); if (TRANSLATIONS[s]) return s; }
+      if (tgLang) { const s = tgLang.split('-')[0].toLowerCase(); if (T[s]) return s; }
     } catch(e) {}
     const b = (navigator.language || 'en').split('-')[0].toLowerCase();
-    return TRANSLATIONS[b] ? b : 'en';
+    return T[b] ? b : 'en';
   }
 
   const lang = getLang();
-  const t = TRANSLATIONS[lang];
+  const t = T[lang];
   document.documentElement.lang = lang;
-  document.getElementById('reload-btn').textContent = t.reconnect;
-  document.getElementById('unmute-btn').textContent = t.unmute;
 
-  const STREAM_API = 'https://nova-proxy-eight.vercel.app/api/stream';
-  const PROXY_BASE = 'https://nova-proxy-eight.vercel.app/api/proxy?url=';
+  const video        = document.getElementById('video');
+  const status       = document.getElementById('status');
+  const reloadBtn    = document.getElementById('reload-btn');
+  const unmuteBtn    = document.getElementById('unmute-btn');
+  const fullscreenBtn = document.getElementById('fullscreen-btn');
 
-  const video     = document.getElementById('video');
-  const status    = document.getElementById('status');
-  const reloadBtn = document.getElementById('reload-btn');
-  const unmuteBtn = document.getElementById('unmute-btn');
+  reloadBtn.textContent    = t.reconnect;
+  unmuteBtn.textContent    = t.unmute;
+  fullscreenBtn.textContent = t.fullscreen;
+
+  const STREAM_API  = 'https://nova-proxy-eight.vercel.app/api/stream';
+  const PROXY_BASE  = 'https://nova-proxy-eight.vercel.app/api/proxy?url=';
+  const EXTERNAL_URL = 'https://varenik-ai.github.io/nova-tv-app/';
   let hls;
 
-  function setStatus(key, isError) {
-    const msg = t[key] || key;
-    status.innerHTML = isError ? '⚠️ ' + msg : '<span class="dot"></span>' + msg;
-    reloadBtn.style.display = isError ? 'block' : 'none';
-  }
-
-  function unmute() {
-    video.muted = false;
-    video.volume = 1.0;
-    unmuteBtn.style.display = 'none';
-  }
-
+  // ===== Media Session =====
   function setupMediaSession() {
     if (!('mediaSession' in navigator)) return;
     navigator.mediaSession.metadata = new MediaMetadata({
@@ -90,33 +93,44 @@
       album: 'Nova TV',
       artwork: [{ src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Nova_TV_Bulgaria_Logo.svg/512px-Nova_TV_Bulgaria_Logo.svg.png', sizes: '512x512', type: 'image/png' }]
     });
-    navigator.mediaSession.setActionHandler('play', () => { video.play(); navigator.mediaSession.playbackState = 'playing'; });
-    navigator.mediaSession.setActionHandler('pause', () => { video.pause(); navigator.mediaSession.playbackState = 'paused'; });
-    navigator.mediaSession.setActionHandler('stop', () => { video.pause(); navigator.mediaSession.playbackState = 'paused'; });
     navigator.mediaSession.playbackState = 'playing';
+    navigator.mediaSession.setActionHandler('play', async () => {
+      try { await video.play(); navigator.mediaSession.playbackState = 'playing'; } catch(e) {}
+    });
+    navigator.mediaSession.setActionHandler('pause', () => {
+      video.pause(); navigator.mediaSession.playbackState = 'paused';
+    });
+    navigator.mediaSession.setActionHandler('stop', () => {
+      video.pause(); navigator.mediaSession.playbackState = 'paused';
+    });
   }
 
-  // Не останавливаем воспроизведение при скрытии страницы
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') {
-      if (!video.paused) {
-        // Принудительно продолжаем воспроизведение
-        video.play().catch(() => {});
-      }
+  // ===== Sync playback state =====
+  video.addEventListener('play', () => {
+    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+  });
+  video.addEventListener('pause', () => {
+    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+  });
+
+  // ===== Background playback =====
+  document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'hidden' && !video.paused) {
+      try { await video.play(); } catch(e) {}
     }
   });
 
-  // Возобновляем если остановилось
   video.addEventListener('pause', () => {
     if (document.visibilityState === 'hidden') {
-      setTimeout(() => {
-        if (video.paused && document.visibilityState === 'hidden') {
-          video.play().catch(() => {});
+      setTimeout(async () => {
+        if (video.paused) {
+          try { await video.play(); } catch(e) {}
         }
       }, 500);
     }
   });
 
+  // ===== Wake Lock =====
   async function requestWakeLock() {
     try {
       if ('wakeLock' in navigator) {
@@ -130,11 +144,50 @@
     } catch(e) {}
   }
 
+  // ===== Fullscreen =====
+  async function openFullscreen() {
+    try {
+      if (window.Telegram?.WebApp?.requestFullscreen) {
+        await window.Telegram.WebApp.requestFullscreen();
+        return;
+      }
+      if (video.requestFullscreen) {
+        await video.requestFullscreen();
+      } else if (video.webkitEnterFullscreen) {
+        video.webkitEnterFullscreen();
+      } else if (video.webkitRequestFullscreen) {
+        video.webkitRequestFullscreen();
+      }
+    } catch(e) {
+      // Fallback — открываем во внешнем браузере
+      if (window.Telegram && Telegram.WebApp.openLink) {
+        Telegram.WebApp.openLink(EXTERNAL_URL);
+      } else {
+        window.open(EXTERNAL_URL, '_blank');
+      }
+    }
+  }
+
+  // ===== Status =====
+  function setStatus(key, isError) {
+    const msg = t[key] || key;
+    status.innerHTML = isError ? '⚠️ ' + msg : '<span class="dot"></span>' + msg;
+    reloadBtn.style.display = isError ? 'block' : 'none';
+  }
+
+  function unmute() {
+    video.muted = false;
+    video.volume = 1.0;
+    unmuteBtn.style.display = 'none';
+  }
+
+  // ===== Stream =====
   function loadStream(url) {
     const proxiedUrl = PROXY_BASE + encodeURIComponent(url);
     if (hls) hls.destroy();
     setStatus('connecting');
     unmuteBtn.style.display = 'none';
+
     if (Hls.isSupported()) {
       hls = new Hls({ liveSyncDurationCount: 3, enableWorker: true });
       hls.loadSource(proxiedUrl);

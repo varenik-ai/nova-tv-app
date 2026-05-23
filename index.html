@@ -145,15 +145,14 @@
 
   function toggleFullscreen() {
     if (!isFs) {
-      if (container.requestFullscreen) container.requestFullscreen();
-      else if (container.webkitRequestFullscreen) container.webkitRequestFullscreen();
-      else if (video.webkitEnterFullscreen) { video.webkitEnterFullscreen(); return; }
-      else {
-        container.classList.add('fullscreen');
-        logo.style.display = 'none';
-        status.style.display = 'none';
-        fsBtn.textContent = '✕';
-        isFs = true;
+      if (video.requestFullscreen) {
+        video.requestFullscreen().catch(() => cssFullscreen());
+      } else if (video.webkitRequestFullscreen) {
+        video.webkitRequestFullscreen().catch(() => cssFullscreen());
+      } else if (video.webkitEnterFullscreen) {
+        video.webkitEnterFullscreen();
+      } else {
+        cssFullscreen();
       }
     } else {
       if (document.exitFullscreen) document.exitFullscreen();

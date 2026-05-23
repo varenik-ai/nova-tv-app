@@ -96,21 +96,31 @@
   document.getElementById('reload-btn').textContent = t.reconnect;
   document.getElementById('unmute-btn').textContent = t.unmute;
 
-  // Показываем подсказку только на Android в Telegram
+  // Показываем кнопку только на Android в Telegram
   if (isAndroid && isTelegram) {
     const hint = document.getElementById('android-hint');
     const labels = {
-      ru:'💡 Для полного экрана и фонового звука — используйте кнопку <b>🌐 Открыть в браузере</b> в меню бота',
-      bg:'💡 За цял екран — използвайте бутона <b>🌐 Отвори в браузър</b> в менюто на бота',
-      en:'💡 For fullscreen & background audio — use <b>🌐 Open in browser</b> button in bot menu',
-      de:'💡 Vollbild — nutzen Sie <b>🌐 Im Browser öffnen</b> im Bot-Menü',
-      fr:'💡 Plein écran — utilisez <b>🌐 Ouvrir dans le navigateur</b> dans le menu du bot',
-      es:'💡 Pantalla completa — use <b>🌐 Abrir en navegador</b> en el menú del bot',
-      uk:'💡 Повний екран — використовуйте кнопку <b>🌐 Відкрити у браузері</b> в меню бота',
-      tr:'💡 Tam ekran — bot menüsünde <b>🌐 Tarayıcıda aç</b> butonunu kullanın',
+      ru:'🌐 Открыть для полного экрана',
+      bg:'🌐 Отвори за цял екран',
+      en:'🌐 Open fullscreen',
+      de:'🌐 Vollbild öffnen',
+      fr:'🌐 Ouvrir plein écran',
+      es:'🌐 Abrir pantalla completa',
+      uk:'🌐 Відкрити повний екран',
+      tr:'🌐 Tam ekran aç',
     };
-    hint.innerHTML = labels[lang] || labels.en;
+    const label = labels[lang] || labels.en;
+    hint.innerHTML = '<button onclick="openFullscreen()" style="padding:10px 20px;background:#e63946;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;width:100%;font-weight:bold;">' + label + '</button>';
     hint.style.display = 'block';
+  }
+
+  function openFullscreen() {
+    // Закрываем Mini App и открываем бота — там есть кнопка внешнего браузера
+    if (window.Telegram && Telegram.WebApp.openTelegramLink) {
+      Telegram.WebApp.openTelegramLink('https://t.me/novabg_live_bot');
+    } else if (window.Telegram && Telegram.WebApp.close) {
+      Telegram.WebApp.close();
+    }
   }
 
   const STREAM_API = 'https://nova-proxy-eight.vercel.app/api/stream';

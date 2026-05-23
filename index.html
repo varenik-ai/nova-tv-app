@@ -112,13 +112,15 @@
   const EXTERNAL_URL = 'https://varenik-ai.github.io/nova-tv-app/';
 
   function openExternal() {
-    // Используем pages.dev — другой домен вызывает диалог Telegram
     const url = 'https://nova-tv-app.pages.dev/';
-    if (window.Telegram && Telegram.WebApp.openLink) {
-      Telegram.WebApp.openLink(url, {try_instant_view: false});
-    } else {
-      window.open(url, '_blank');
-    }
+    // Создаём временный элемент ссылки и кликаем
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   }
 
   // Показываем подсказку только на Android в Telegram

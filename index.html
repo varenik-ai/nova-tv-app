@@ -135,14 +135,16 @@
   }
 
   // ===== Playback state =====
-  video.addEventListener('play', () => {
-    userPaused = false;
-    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
-  });
-
   video.addEventListener('pause', () => {
     if (isIOS()) userPaused = true;
     if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+
+    // Если пользователь сам нажал паузу — останавливаем и audio-bg
+    if (document.visibilityState === 'visible') {
+      const audioBg = document.getElementById('audio-bg');
+      if (audioBg) audioBg.pause();
+    }
+
     // Android: если экран погас и Telegram прибил playback — быстро возвращаем
     if (isAndroid() && document.visibilityState === 'hidden') {
       setTimeout(async () => {
@@ -150,6 +152,18 @@
           try { await video.play(); } catch(e) {}
         }
       }, 300);
+    }
+  });
+
+  // Синхронизируем play audio-bg с видео
+  video.addEventListener('play', () => {
+    userPaused = false;
+    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+    if (isAndroid()) {
+      const audioBg = document.getElementById('audio-bg');
+      if (audioBg && audioBg.paused && audioBg.src) {
+        audioBg.play().catch(() => {});
+      }
     }
   });
 

@@ -31,6 +31,7 @@
 <div class="logo">NOVA <span>TV</span></div>
 <div id="video-container">
   <video id="video" controls autoplay playsinline webkit-playsinline airplay="allow"></video>
+  <audio id="audio-bg" style="display:none"></audio>
 </div>
 <div id="status"><span class="dot"></span>...</div>
 <button id="reload-btn" class="btn"></button>
@@ -163,9 +164,16 @@
     }
     // Android: экран выключился — держим playback
     if (isAndroid() && document.visibilityState === 'hidden') {
+      // Пробуем удержать видео
       setTimeout(async () => {
-        if (!video.paused) return;
-        try { await video.play(); } catch(e) {}
+        if (video.paused) {
+          try { await video.play(); } catch(e) {}
+        }
+        // Удерживаем аудио как резерв
+        const audioBg = document.getElementById('audio-bg');
+        if (audioBg && audioBg.paused) {
+          try { await audioBg.play(); } catch(e) {}
+        }
       }, 300);
     }
     // Возврат в app
@@ -219,6 +227,15 @@
     if (hls) hls.destroy();
     setStatus('connecting');
     unmuteBtn.style.display = 'none';
+
+    // Android: дублируем поток в audio для фонового воспроизведения
+    if (isAndroid()) {
+      const audioBg = document.getElementById('audio-bg');
+      if (audioBg) {
+        audioBg.src = proxiedUrl;
+        audioBg.play().catch(() => {});
+      }
+    }
 
     if (Hls.isSupported()) {
       hls = new Hls({ liveSyncDurationCount: 3, enableWorker: true });

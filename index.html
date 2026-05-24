@@ -226,9 +226,9 @@
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         setStatus('live');
-        video.muted = true;
+        video.muted = isIOS();
         video.play().then(() => {
-          if (isIOS()) unmuteBtn.style.display = 'block';
+          if (video.muted) unmuteBtn.style.display = 'block';
           setupMediaSession();
           if (!isIOS()) requestWakeLock();
         }).catch(() => setStatus('pressPlay'));
@@ -238,9 +238,9 @@
       });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
       video.src = proxiedUrl;
-      video.muted = true;
+      video.muted = isIOS();
       video.play().then(() => {
-        if (isIOS()) unmuteBtn.style.display = 'block';
+        if (video.muted) unmuteBtn.style.display = 'block';
         setupMediaSession();
         if (!isIOS()) requestWakeLock();
       });

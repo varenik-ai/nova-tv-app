@@ -118,24 +118,37 @@
     });
   }
 
+
+
+  // ===== Background playback =====
+  let userPaused = false;
+  let wakeLockSentinel = null;
+
+  function isIOS() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  }
+
   video.addEventListener('play', () => {
+    userPaused = false;
     if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
   });
+
   video.addEventListener('pause', () => {
+    userPaused = true;
     if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
   });
 
-  // ===== Background playback =====
   document.addEventListener('visibilitychange', async () => {
-    if (document.visibilityState === 'hidden' && !video.paused) {
+    if (document.visibilityState === 'hidden') return;
+    if (!userPaused && video.paused) {
       try { await video.play(); } catch(e) {}
     }
   });
-  video.addEventListener('pause', () => {
-    if (document.visibilityState === 'hidden') {
-      setTimeout(async () => {
-        if (video.paused) { try { await video.play(); } catch(e) {} }
-      }, 500);
+
+  window.addEventListener('pageshow', async () => {
+    if (!userPaused && video.paused) {
+      try { await video.play(); } catch(e) {}
     }
   });
 
@@ -143,12 +156,7 @@
   async function requestWakeLock() {
     try {
       if ('wakeLock' in navigator) {
-        await navigator.wakeLock.request('screen');
-        document.addEventListener('visibilitychange', async () => {
-          if (document.visibilityState === 'visible') {
-            try { await navigator.wakeLock.request('screen'); } catch(e) {}
-          }
-        });
+        wakeLockSentinel = await navigator.wakeLock.request('screen');
       }
     } catch(e) {}
   }
@@ -193,7 +201,7 @@
         video.play().then(() => {
           unmuteBtn.style.display = 'block';
           setupMediaSession();
-          requestWakeLock();
+          if (!isIOS()) requestWakeLock();
         }).catch(() => setStatus('pressPlay'));
       });
       hls.on(Hls.Events.ERROR, (e, data) => {
@@ -205,7 +213,7 @@
       video.play().then(() => {
         unmuteBtn.style.display = 'block';
         setupMediaSession();
-        requestWakeLock();
+        if (!isIOS()) requestWakeLock();
       });
       setStatus('live');
     }

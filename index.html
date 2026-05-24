@@ -2,45 +2,43 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Nova TV</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #0a0a0a; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; font-family: -apple-system, sans-serif; color: white; }
-    .logo { font-size: 28px; font-weight: 900; color: #e63946; letter-spacing: 2px; margin-bottom: 16px; text-transform: uppercase; }
+    html, body { background: #0a0a0a; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, sans-serif; color: white; overflow-x: hidden; }
+    body { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+    .logo { font-size: 28px; font-weight: 900; color: #e63946; letter-spacing: 2px; margin-bottom: 16px; text-transform: uppercase; text-align: center; }
     .logo span { color: white; }
-    #video-container { width: 100%; max-width: 900px; background: #000; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.6); }
+    #video-container { width: 100%; max-width: 900px; background: #000; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,.6); position: relative; }
     video { width: 100%; display: block; background: #000; }
     #status { margin-top: 14px; font-size: 13px; color: #888; text-align: center; }
     .dot { display: inline-block; width: 8px; height: 8px; background: #e63946; border-radius: 50%; margin-right: 6px; animation: pulse 1.2s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.2} }
-    .btn { margin-top: 12px; padding: 10px 24px; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; display: none; width: 90%; max-width: 340px; }
-    #reload-btn { background: #333; }
-    #unmute-btn { background: #e63946; }
-    #fullscreen-btn { background: #1a1a2e; border: 1px solid #444; display: block; margin-top: 12px; }
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.2} }
+    .btn { margin-top: 12px; padding: 12px 24px; color: white; border: none; border-radius: 10px; font-size: 15px; cursor: pointer; width: 90%; max-width: 340px; transition: opacity .2s ease; }
+    .btn:active { opacity: .8; }
+    #reload-btn { background: #333; display: none; }
+    #unmute-btn { background: #e63946; display: none; }
+    #fullscreen-btn { background: #1a1a2e; border: 1px solid #444; display: block; }
+    #video-container:fullscreen, #video-container:-webkit-full-screen { width: 100vw !important; height: 100vh !important; max-width: none !important; border-radius: 0 !important; }
+    #video-container:fullscreen video, #video-container:-webkit-full-screen video { width: 100vw; height: 100vh; object-fit: contain; }
   </style>
 </head>
 <body>
+
 <div class="logo">NOVA <span>TV</span></div>
 <div id="video-container">
-  <video
-    id="video"
-    controls
-    autoplay
-    playsinline
-    webkit-playsinline
-    airplay="allow"
-  ></video>
+  <video id="video" controls autoplay playsinline webkit-playsinline airplay="allow"></video>
 </div>
 <div id="status"><span class="dot"></span>...</div>
-<button id="reload-btn" class="btn" onclick="init()">🔄</button>
-<button id="unmute-btn" class="btn" onclick="unmute()">🔊</button>
-<button id="fullscreen-btn" class="btn" onclick="openFullscreen()">🔳</button>
+<button id="reload-btn" class="btn"></button>
+<button id="unmute-btn" class="btn"></button>
+<button id="fullscreen-btn" class="btn"></button>
 
 <script>
-  if (window.Telegram && window.Telegram.WebApp) {
+  if (window.Telegram?.WebApp) {
     Telegram.WebApp.ready();
     Telegram.WebApp.expand();
   }
@@ -58,8 +56,8 @@
 
   function getLang() {
     try {
-      const tgLang = Telegram.WebApp.initDataUnsafe?.user?.language_code;
-      if (tgLang) { const s = tgLang.split('-')[0].toLowerCase(); if (T[s]) return s; }
+      const s = Telegram.WebApp.initDataUnsafe?.user?.language_code?.split('-')[0].toLowerCase();
+      if (s && T[s]) return s;
     } catch(e) {}
     const b = (navigator.language || 'en').split('-')[0].toLowerCase();
     return T[b] ? b : 'en';
@@ -70,6 +68,7 @@
   document.documentElement.lang = lang;
 
   const video        = document.getElementById('video');
+  const videoContainer = document.getElementById('video-container');
   const status       = document.getElementById('status');
   const reloadBtn    = document.getElementById('reload-btn');
   const unmuteBtn    = document.getElementById('unmute-btn');
@@ -78,11 +77,25 @@
   reloadBtn.textContent    = t.reconnect;
   unmuteBtn.textContent    = t.unmute;
   fullscreenBtn.textContent = t.fullscreen;
+  reloadBtn.onclick = init;
+  unmuteBtn.onclick = unmute;
+  fullscreenBtn.onclick = openFullscreen;
 
   const STREAM_API  = 'https://nova-proxy-eight.vercel.app/api/stream';
   const PROXY_BASE  = 'https://nova-proxy-eight.vercel.app/api/proxy?url=';
-  const EXTERNAL_URL = 'https://varenik-ai.github.io/nova-tv-app/';
   let hls;
+
+  function setStatus(key, isError = false) {
+    const msg = t[key] || key;
+    status.innerHTML = isError ? '⚠️ ' + msg : '<span class="dot"></span>' + msg;
+    reloadBtn.style.display = isError ? 'block' : 'none';
+  }
+
+  function unmute() {
+    video.muted = false;
+    video.volume = 1;
+    unmuteBtn.style.display = 'none';
+  }
 
   // ===== Media Session =====
   function setupMediaSession() {
@@ -105,7 +118,6 @@
     });
   }
 
-  // ===== Sync playback state =====
   video.addEventListener('play', () => {
     if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
   });
@@ -119,13 +131,10 @@
       try { await video.play(); } catch(e) {}
     }
   });
-
   video.addEventListener('pause', () => {
     if (document.visibilityState === 'hidden') {
       setTimeout(async () => {
-        if (video.paused) {
-          try { await video.play(); } catch(e) {}
-        }
+        if (video.paused) { try { await video.play(); } catch(e) {} }
       }, 500);
     }
   });
@@ -147,38 +156,24 @@
   // ===== Fullscreen =====
   async function openFullscreen() {
     try {
-      if (window.Telegram?.WebApp?.requestFullscreen) {
-        await window.Telegram.WebApp.requestFullscreen();
+      if (document.fullscreenElement || document.webkitFullscreenElement) {
+        if (document.exitFullscreen) await document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
         return;
       }
-      if (video.requestFullscreen) {
-        await video.requestFullscreen();
-      } else if (video.webkitEnterFullscreen) {
-        video.webkitEnterFullscreen();
-      } else if (video.webkitRequestFullscreen) {
-        video.webkitRequestFullscreen();
-      }
+      try {
+        if (window.Telegram?.WebApp?.requestFullscreen) {
+          await Telegram.WebApp.requestFullscreen();
+          return;
+        }
+      } catch(e) {}
+      const el = videoContainer;
+      if (el.requestFullscreen) { await el.requestFullscreen(); return; }
+      if (el.webkitRequestFullscreen) { el.webkitRequestFullscreen(); return; }
+      if (video.webkitEnterFullscreen) { video.webkitEnterFullscreen(); }
     } catch(e) {
-      // Fallback — открываем во внешнем браузере
-      if (window.Telegram && Telegram.WebApp.openLink) {
-        Telegram.WebApp.openLink(EXTERNAL_URL);
-      } else {
-        window.open(EXTERNAL_URL, '_blank');
-      }
+      console.warn('Fullscreen error:', e);
     }
-  }
-
-  // ===== Status =====
-  function setStatus(key, isError) {
-    const msg = t[key] || key;
-    status.innerHTML = isError ? '⚠️ ' + msg : '<span class="dot"></span>' + msg;
-    reloadBtn.style.display = isError ? 'block' : 'none';
-  }
-
-  function unmute() {
-    video.muted = false;
-    video.volume = 1.0;
-    unmuteBtn.style.display = 'none';
   }
 
   // ===== Stream =====

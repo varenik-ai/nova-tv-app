@@ -225,10 +225,21 @@
     if (isFs) {
       videoContainer.classList.remove('is-fullscreen');
       document.body.style.overflow = '';
+      try {
+        if (window.Telegram?.WebApp?.exitFullscreen) {
+          Telegram.WebApp.exitFullscreen();
+        }
+      } catch(e) {}
     } else {
       videoContainer.classList.add('is-fullscreen');
       document.body.style.overflow = 'hidden';
-      // Пробуем нативный fullscreen как дополнение
+      // Скрываем шапку Telegram
+      try {
+        if (window.Telegram?.WebApp?.requestFullscreen) {
+          Telegram.WebApp.requestFullscreen();
+        }
+      } catch(e) {}
+      // iOS нативный fullscreen
       try {
         if (video.webkitEnterFullscreen) video.webkitEnterFullscreen();
       } catch(e) {}

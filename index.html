@@ -43,6 +43,34 @@
       max-width: 100vw !important;
       object-fit: contain !important;
     }
+
+    body.is-fullscreen-mode {
+      position: fixed !important;
+      top: 0 !important; left: 0 !important;
+      width: 100vw !important; height: 100vh !important;
+      overflow: hidden !important;
+      padding: 0 !important;
+    }
+    body.is-fullscreen-mode .logo,
+    body.is-fullscreen-mode #status,
+    body.is-fullscreen-mode #reload-btn,
+    body.is-fullscreen-mode #unmute-btn,
+    body.is-fullscreen-mode #fullscreen-btn {
+      display: none !important;
+    }
+    body.is-fullscreen-mode #video-container {
+      position: fixed !important;
+      top: 0 !important; left: 0 !important;
+      width: 100vw !important; height: 100vh !important;
+      max-width: none !important;
+      border-radius: 0 !important;
+      z-index: 99999 !important;
+    }
+    body.is-fullscreen-mode #video-container video {
+      width: 100vw !important;
+      height: 100vh !important;
+      object-fit: contain !important;
+    }
   </style>
 </head>
 <body>
@@ -221,28 +249,16 @@
 
   // ── Fullscreen ───────────────────────────────────────────────────────────
   function openFullscreen() {
-    const isFs = videoContainer.classList.contains('is-fullscreen');
+    const isFs = document.body.classList.contains('is-fullscreen-mode');
     if (isFs) {
-      videoContainer.classList.remove('is-fullscreen');
-      document.body.style.overflow = '';
-      try {
-        if (window.Telegram?.WebApp?.exitFullscreen) {
-          Telegram.WebApp.exitFullscreen();
-        }
-      } catch(e) {}
+      document.body.classList.remove('is-fullscreen-mode');
+      // Показываем кнопки обратно
+      document.getElementById('fullscreen-btn').style.display = 'block';
+      document.getElementById('unmute-btn').style.display = video.muted ? 'block' : 'none';
+      try { if (window.Telegram?.WebApp?.exitFullscreen) Telegram.WebApp.exitFullscreen(); } catch(e) {}
     } else {
-      videoContainer.classList.add('is-fullscreen');
-      document.body.style.overflow = 'hidden';
-      // Скрываем шапку Telegram
-      try {
-        if (window.Telegram?.WebApp?.requestFullscreen) {
-          Telegram.WebApp.requestFullscreen();
-        }
-      } catch(e) {}
-      // iOS нативный fullscreen
-      try {
-        if (video.webkitEnterFullscreen) video.webkitEnterFullscreen();
-      } catch(e) {}
+      document.body.classList.add('is-fullscreen-mode');
+      try { if (window.Telegram?.WebApp?.requestFullscreen) Telegram.WebApp.requestFullscreen(); } catch(e) {}
     }
   }
 

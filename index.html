@@ -269,7 +269,6 @@
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         setStatus('live');
-        logEvent('stream_start');
         video.muted = isIOS();
         video.play().then(() => {
           if (video.muted) unmuteBtn.style.display = 'block';

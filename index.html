@@ -88,6 +88,14 @@
   if (window.Telegram?.WebApp) {
     Telegram.WebApp.ready();
     Telegram.WebApp.expand();
+    // Скрываем шапку Telegram
+    try {
+      Telegram.WebApp.setHeaderColor('#000000');
+      Telegram.WebApp.setBackgroundColor('#000000');
+      if (Telegram.WebApp.isVersionAtLeast('7.7')) {
+        Telegram.WebApp.setHeaderColor('secondary_bg_color');
+      }
+    } catch(e) {}
     // Полноэкранный режим при старте — скрывает URL
     if (Telegram.WebApp.requestFullscreen) {
       try { Telegram.WebApp.requestFullscreen(); } catch(e) {}

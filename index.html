@@ -65,6 +65,18 @@
   }
 
   const lang = getLang();
+
+  // ===== Analytics =====
+  function logEvent(event) {
+    const device = isIOS() ? 'ios' : isAndroid() ? 'android' : 'desktop';
+    const lang = getLang();
+    fetch('https://nova-proxy-eight.vercel.app/api/log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channel: 'Nova TV', event, device, lang })
+    }).catch(() => {});
+  }
+
   const t = T[lang];
   document.documentElement.lang = lang;
 
@@ -257,6 +269,7 @@
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         setStatus('live');
+        logEvent('stream_start');
         video.muted = isIOS();
         video.play().then(() => {
           if (video.muted) unmuteBtn.style.display = 'block';
@@ -265,7 +278,7 @@
         }).catch(() => setStatus('pressPlay'));
       });
       hls.on(Hls.Events.ERROR, (e, data) => {
-        if (data.fatal) { setStatus('errorStream', true); setTimeout(init, 3000); }
+        if (data.fatal) { logEvent('stream_error'); setStatus('errorStream', true); setTimeout(init, 3000); }
       });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
       video.src = proxiedUrl;
@@ -294,7 +307,7 @@
   }
 
   init();
-  setInterval(init, 25 * 60 * 1000);
+  setInterval(() => { logEvent('token_refresh'); init(); }, 25 * 60 * 1000);
 </script>
 </body>
 </html>

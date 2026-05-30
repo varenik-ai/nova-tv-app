@@ -41,6 +41,10 @@
   if (window.Telegram?.WebApp) {
     Telegram.WebApp.ready();
     Telegram.WebApp.expand();
+    // Полноэкранный режим при старте — скрывает URL
+    if (Telegram.WebApp.requestFullscreen) {
+      try { Telegram.WebApp.requestFullscreen(); } catch(e) {}
+    }
   }
 
   const T = {
@@ -199,20 +203,25 @@
   // ── Fullscreen ───────────────────────────────────────────────────────────
   async function openFullscreen() {
     try {
+      // Выход из fullscreen
       if (document.fullscreenElement || document.webkitFullscreenElement) {
         if (document.exitFullscreen) await document.exitFullscreen();
         else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
         return;
       }
-      try {
-        if (window.Telegram?.WebApp?.requestFullscreen) {
-          await Telegram.WebApp.requestFullscreen(); return;
-        }
-      } catch(e) {}
+      // Telegram fullscreen (скрывает URL)
+      if (window.Telegram?.WebApp?.requestFullscreen) {
+        try { await Telegram.WebApp.requestFullscreen(); return; } catch(e) {}
+      }
+      // Android: нативный video fullscreen
+      if (isAndroid() && video.requestFullscreen) {
+        await video.requestFullscreen(); return;
+      }
+      // iOS и Desktop
       const el = videoContainer;
-      if (el.requestFullscreen)       { await el.requestFullscreen(); return; }
+      if (el.requestFullscreen) { await el.requestFullscreen(); return; }
       if (el.webkitRequestFullscreen) { el.webkitRequestFullscreen(); return; }
-      if (video.webkitEnterFullscreen)  video.webkitEnterFullscreen();
+      if (video.webkitEnterFullscreen) video.webkitEnterFullscreen();
     } catch(e) {}
   }
 

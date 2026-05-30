@@ -71,6 +71,38 @@
       height: 100vh !important;
       object-fit: contain !important;
     }
+
+    html.fullscreen-shift {
+      overflow: hidden;
+    }
+    html.fullscreen-shift body {
+      transform: translateY(-56px);
+      height: calc(100vh + 56px);
+      overflow: hidden;
+      padding: 0;
+    }
+    html.fullscreen-shift #video-container {
+      position: fixed !important;
+      top: 56px !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      max-width: none !important;
+      border-radius: 0 !important;
+      z-index: 99999 !important;
+    }
+    html.fullscreen-shift #video-container video {
+      width: 100vw !important;
+      height: 100vh !important;
+      object-fit: contain !important;
+    }
+    html.fullscreen-shift .logo,
+    html.fullscreen-shift #status,
+    html.fullscreen-shift #reload-btn,
+    html.fullscreen-shift #unmute-btn,
+    html.fullscreen-shift #fullscreen-btn {
+      display: none !important;
+    }
   </style>
 </head>
 <body>
@@ -251,16 +283,12 @@
 
   // ── Fullscreen ───────────────────────────────────────────────────────────
   function openFullscreen() {
-    const isFs = document.body.classList.contains('is-fullscreen-mode');
+    const isFs = document.documentElement.classList.contains('fullscreen-shift');
     if (isFs) {
-      document.body.classList.remove('is-fullscreen-mode');
-      // Показываем кнопки обратно
+      document.documentElement.classList.remove('fullscreen-shift');
       document.getElementById('fullscreen-btn').style.display = 'block';
-      document.getElementById('unmute-btn').style.display = video.muted ? 'block' : 'none';
-      try { if (window.Telegram?.WebApp?.exitFullscreen) Telegram.WebApp.exitFullscreen(); } catch(e) {}
     } else {
-      document.body.classList.add('is-fullscreen-mode');
-      try { if (window.Telegram?.WebApp?.requestFullscreen) Telegram.WebApp.requestFullscreen(); } catch(e) {}
+      document.documentElement.classList.add('fullscreen-shift');
     }
   }
 

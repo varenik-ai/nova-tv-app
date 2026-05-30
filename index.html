@@ -203,21 +203,21 @@
   // ── Fullscreen ───────────────────────────────────────────────────────────
   async function openFullscreen() {
     try {
-      // Выход из fullscreen
       if (document.fullscreenElement || document.webkitFullscreenElement) {
         if (document.exitFullscreen) await document.exitFullscreen();
         else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
         return;
       }
-      // Android: нативный video fullscreen
+      if (window.Telegram?.WebApp?.requestFullscreen) {
+        try { await Telegram.WebApp.requestFullscreen(); return; } catch(e) {}
+      }
       if (isAndroid() && video.requestFullscreen) {
         await video.requestFullscreen(); return;
       }
-      // iOS и Desktop
       const el = videoContainer;
-      if (el.requestFullscreen) { await el.requestFullscreen(); return; }
+      if (el.requestFullscreen)       { await el.requestFullscreen(); return; }
       if (el.webkitRequestFullscreen) { el.webkitRequestFullscreen(); return; }
-      if (video.webkitEnterFullscreen) video.webkitEnterFullscreen();
+      if (video.webkitEnterFullscreen)  video.webkitEnterFullscreen();
     } catch(e) {}
   }
 

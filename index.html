@@ -24,6 +24,39 @@
     #fullscreen-btn { background: #1a1a2e; border: 1px solid #444; display: block; }
     #video-container:fullscreen, #video-container:-webkit-full-screen { width: 100vw !important; height: 100vh !important; max-width: none !important; border-radius: 0 !important; }
     #video-container:fullscreen video, #video-container:-webkit-full-screen video { width: 100vw; height: 100vh; object-fit: contain; }
+
+    body.expanded {
+      padding: 0 !important;
+      justify-content: flex-start !important;
+    }
+    body.expanded .logo,
+    body.expanded #status,
+    body.expanded #reload-btn,
+    body.expanded #unmute-btn {
+      display: none !important;
+    }
+    body.expanded #video-container {
+      max-width: none !important;
+      border-radius: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      display: flex !important;
+      align-items: center !important;
+    }
+    body.expanded video {
+      width: 100vw !important;
+      height: 100vh !important;
+      object-fit: contain !important;
+    }
+    body.expanded #fullscreen-btn {
+      position: fixed !important;
+      bottom: 16px !important;
+      right: 16px !important;
+      width: auto !important;
+      margin: 0 !important;
+      opacity: 0.7 !important;
+      z-index: 999 !important;
+    }
   </style>
 </head>
 <body>
@@ -213,25 +246,18 @@
   }
 
   // ===== Fullscreen =====
-  async function openFullscreen() {
-    try {
-      if (document.fullscreenElement || document.webkitFullscreenElement) {
-        if (document.exitFullscreen) await document.exitFullscreen();
-        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-        return;
-      }
+  function openFullscreen() {
+    const isExpanded = document.body.classList.contains('expanded');
+    if (isExpanded) {
+      document.body.classList.remove('expanded');
+      fullscreenBtn.textContent = t.fullscreen;
+    } else {
+      document.body.classList.add('expanded');
+      fullscreenBtn.textContent = '✕ ' + t.fullscreen;
+      // Пробуем нативный fullscreen дополнительно
       try {
-        if (window.Telegram?.WebApp?.requestFullscreen) {
-          await Telegram.WebApp.requestFullscreen();
-          return;
-        }
+        if (window.Telegram?.WebApp?.requestFullscreen) Telegram.WebApp.requestFullscreen();
       } catch(e) {}
-      const el = videoContainer;
-      if (el.requestFullscreen) { await el.requestFullscreen(); return; }
-      if (el.webkitRequestFullscreen) { el.webkitRequestFullscreen(); return; }
-      if (video.webkitEnterFullscreen) { video.webkitEnterFullscreen(); }
-    } catch(e) {
-      console.warn('Fullscreen error:', e);
     }
   }
 

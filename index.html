@@ -215,29 +215,24 @@
   // ===== Fullscreen =====
   async function openFullscreen() {
     try {
-      // Выход
       if (document.fullscreenElement || document.webkitFullscreenElement) {
         if (document.exitFullscreen) await document.exitFullscreen();
         else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
         return;
       }
-      // Android: только через video элемент
-      if (isAndroid()) {
-        if (video.webkitEnterFullscreen) { video.webkitEnterFullscreen(); return; }
-        if (video.requestFullscreen)     { await video.requestFullscreen(); return; }
-      }
-      // Telegram
       try {
         if (window.Telegram?.WebApp?.requestFullscreen) {
-          await Telegram.WebApp.requestFullscreen(); return;
+          await Telegram.WebApp.requestFullscreen();
+          return;
         }
       } catch(e) {}
-      // iOS и Desktop
       const el = videoContainer;
-      if (el.requestFullscreen)       { await el.requestFullscreen(); return; }
+      if (el.requestFullscreen) { await el.requestFullscreen(); return; }
       if (el.webkitRequestFullscreen) { el.webkitRequestFullscreen(); return; }
-      if (video.webkitEnterFullscreen)  video.webkitEnterFullscreen();
-    } catch(e) {}
+      if (video.webkitEnterFullscreen) { video.webkitEnterFullscreen(); }
+    } catch(e) {
+      console.warn('Fullscreen error:', e);
+    }
   }
 
   // ===== Stream =====
@@ -262,9 +257,9 @@
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         setStatus('live');
-        video.muted = true;
+        video.muted = isIOS();
         video.play().then(() => {
-          unmuteBtn.style.display = 'block';
+          if (video.muted) unmuteBtn.style.display = 'block';
           setupMediaSession();
           if (!isIOS()) requestWakeLock();
         }).catch(() => setStatus('pressPlay'));
@@ -274,9 +269,9 @@
       });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
       video.src = proxiedUrl;
-      video.muted = true;
+      video.muted = isIOS();
       video.play().then(() => {
-        unmuteBtn.style.display = 'block';
+        if (video.muted) unmuteBtn.style.display = 'block';
         setupMediaSession();
         if (!isIOS()) requestWakeLock();
       });

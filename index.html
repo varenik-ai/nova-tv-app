@@ -222,17 +222,14 @@
       }
       try {
         if (window.Telegram?.WebApp?.requestFullscreen) {
-          await Telegram.WebApp.requestFullscreen();
-          return;
+          await Telegram.WebApp.requestFullscreen(); return;
         }
       } catch(e) {}
       const el = videoContainer;
-      if (el.requestFullscreen) { await el.requestFullscreen(); return; }
+      if (el.requestFullscreen)       { await el.requestFullscreen(); return; }
       if (el.webkitRequestFullscreen) { el.webkitRequestFullscreen(); return; }
-      if (video.webkitEnterFullscreen) { video.webkitEnterFullscreen(); }
-    } catch(e) {
-      console.warn('Fullscreen error:', e);
-    }
+      if (video.webkitEnterFullscreen)  video.webkitEnterFullscreen();
+    } catch(e) {}
   }
 
   // ===== Stream =====

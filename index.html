@@ -22,7 +22,7 @@
     #reload-btn { background: #333; display: none; }
     #unmute-btn { background: #e63946; display: none; }
     #fullscreen-btn { background: #1a1a2e; border: 1px solid #444; display: block; }
-    #video-container:fullscreen, #video-container:-webkit-full-screen { width: 100vw !important; height: 100vh !important; max-width: none !important; border-radius: 0 !important; }
+    #video-container:fullscreen, #video-container:-webkit-full-screen { width: 100vw !important; height: 100dvh !important; max-width: none !important; border-radius: 0 !important; }
     #video-container:fullscreen video, #video-container:-webkit-full-screen video { width: 100vw; height: 100vh; object-fit: contain; }
 
     body.expanded {
@@ -156,6 +156,7 @@
 
 
   // ===== Background playback =====
+  let userUnmuted  = false;
   let userPaused = false;
   let wakeLockSentinel = null;
 
@@ -225,8 +226,9 @@
       }, 300);
     }
     // Возврат в app
-    if (document.visibilityState === 'visible' && !userPaused && video.paused) {
-      try { await video.play(); } catch(e) {}
+    if (document.visibilityState === 'visible') {
+      if (!userUnmuted) video.muted = true;
+      if (!userPaused && video.paused) { try { await video.play(); } catch(e) {} }
     }
   });
 
@@ -250,37 +252,55 @@
   function openFullscreen() {
     const isExpanded = document.body.classList.contains('expanded');
     if (isExpanded) {
-      // Выход из режима
       document.body.classList.remove('expanded');
-      document.body.style.padding = '';
       videoContainer.style.cssText = '';
       video.style.cssText = '';
-      fullscreenBtn.style.cssText = '';
       document.querySelector('.logo').style.display = '';
       status.style.display = '';
+      unmuteBtn.style.display = userUnmuted ? 'none' : (video.muted ? 'block' : 'none');
+      fullscreenBtn.style.cssText = '';
       fullscreenBtn.textContent = t.fullscreen;
+      if (window._fsTimer) clearTimeout(window._fsTimer);
       if (window._fsOrientationHandler) {
         window.removeEventListener('orientationchange', window._fsOrientationHandler);
         window.removeEventListener('resize', window._fsOrientationHandler);
       }
+      try { if (window.Telegram?.WebApp?.exitFullscreen) Telegram.WebApp.exitFullscreen(); } catch(e) {}
     } else {
-      // Вход в режим
       document.body.classList.add('expanded');
-      document.body.style.padding = '0';
       document.querySelector('.logo').style.display = 'none';
       status.style.display = 'none';
-      videoContainer.style.cssText = 'max-width:none!important;width:100vw!important;height:100vh!important;border-radius:0!important;position:fixed!important;top:0!important;left:0!important;z-index:9999!important;background:#000!important;display:flex!important;align-items:center!important;justify-content:center!important;';
-      video.style.cssText = 'width:100vw!important;height:100vh!important;object-fit:cover!important;position:absolute!important;top:0!important;left:0!important;';
-      // Обновляем стиль при смене ориентации
-      window._fsOrientationHandler = () => {
-        if (document.body.classList.contains('expanded')) {
-          video.style.cssText = 'width:100vw!important;height:100vh!important;object-fit:cover!important;';
-        }
+      unmuteBtn.style.display = 'none';
+
+      const applyFSStyles = () => {
+        const isLandscape = window.innerWidth > window.innerHeight;
+        videoContainer.style.cssText = 'max-width:none!important;width:100vw!important;height:100dvh!important;border-radius:0!important;position:fixed!important;top:0!important;left:0!important;z-index:9999!important;background:#000!important;display:flex!important;align-items:center!important;justify-content:center!important;';
+        video.style.cssText = 'width:100vw!important;height:100dvh!important;object-fit:' + (isLandscape ? 'cover' : 'contain') + '!important;';
       };
-      window.addEventListener('orientationchange', window._fsOrientationHandler);
+      applyFSStyles();
+
+      // Плавающая кнопка выхода
+      fullscreenBtn.style.cssText = 'position:fixed!important;bottom:24px!important;right:24px!important;width:auto!important;margin:0!important;z-index:10000!important;opacity:0.9!important;transition:opacity 0.5s!important;';
+      fullscreenBtn.textContent = '✕ ' + t.fullscreen;
+
+      // Скрываем кнопку через 3 сек бездействия
+      const resetTimer = () => {
+        fullscreenBtn.style.opacity = '0.9';
+        if (window._fsTimer) clearTimeout(window._fsTimer);
+        window._fsTimer = setTimeout(() => { fullscreenBtn.style.opacity = '0'; }, 3000);
+      };
+      resetTimer();
+      document.addEventListener('touchstart', resetTimer, { passive: true });
+      document.addEventListener('mousemove', resetTimer);
+
+      // Авто-переключение object-fit при повороте
+      window._fsOrientationHandler = () => {
+        if (document.body.classList.contains('expanded')) applyFSStyles();
+      };
+      window.addEventListener('orientationchange', () => setTimeout(window._fsOrientationHandler, 200));
       window.addEventListener('resize', window._fsOrientationHandler);
-      fullscreenBtn.style.cssText = 'position:fixed!important;bottom:20px!important;right:20px!important;width:auto!important;margin:0!important;z-index:10000!important;opacity:0.8!important;';
-      fullscreenBtn.textContent = '✕';
+
+      try { if (window.Telegram?.WebApp?.requestFullscreen) Telegram.WebApp.requestFullscreen(); } catch(e) {}
     }
   }
 

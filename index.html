@@ -289,6 +289,62 @@
       opacity:1;
     }
 
+    /* ===== Android hard fullscreen ===== */
+    body.android-hard{
+      overflow:hidden !important;
+      background:#000 !important;
+    }
+
+    body.expanded.android-hard .logo,
+    body.expanded.android-hard #status{
+      opacity:0 !important;
+      pointer-events:none !important;
+    }
+
+    body.expanded.android-hard #stage{
+      position:fixed;
+      left:0;
+      right:0;
+      top:calc(var(--android-fs-offset, 84px) * -1);
+      width:100vw;
+      max-width:none;
+      height:calc(100dvh + var(--android-fs-offset, 84px));
+      gap:0;
+      justify-content:stretch;
+      z-index:999999;
+      background:#000;
+    }
+
+    body.expanded.android-hard #video-container{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      max-width:none;
+      aspect-ratio:auto;
+      max-height:none;
+      border-radius:0;
+      box-shadow:none;
+      outline:none;
+      background:#000;
+      z-index:999999;
+    }
+
+    body.expanded.android-hard video{
+      object-fit:cover;
+    }
+
+    body.expanded.android-hard #controls{
+      z-index:1000000;
+    }
+
+    body.expanded.android-hard.ui-hidden #controls{
+      opacity:0;
+      transform:translateY(10px);
+      pointer-events:none;
+    }
+
+
     @media (max-width: 720px){
       #controls{
         grid-template-columns:repeat(2, minmax(0,1fr));
@@ -532,6 +588,17 @@
       return /Android/i.test(navigator.userAgent);
     }
 
+    function getAndroidFsOffset() {
+      const vv = window.visualViewport?.height || window.innerHeight || 0;
+      const ih = window.innerHeight || vv || 0;
+      const delta = Math.max(0, ih - vv);
+      return Math.max(84, delta || 0);
+    }
+
+    function applyAndroidFsOffset() {
+      document.body.style.setProperty('--android-fs-offset', getAndroidFsOffset() + 'px');
+    }
+
     function isExpanded() {
       return document.body.classList.contains('expanded');
     }
@@ -548,6 +615,13 @@
         document.body.classList.remove('portrait', 'landscape');
         return;
       }
+
+      if (document.body.classList.contains('android-hard')) {
+        document.body.classList.remove('portrait');
+        document.body.classList.add('landscape');
+        return;
+      }
+
       document.body.classList.toggle('landscape', window.innerWidth > window.innerHeight);
       document.body.classList.toggle('portrait', window.innerWidth <= window.innerHeight);
     }
@@ -678,6 +752,13 @@
       document.body.classList.remove('ui-hidden');
       document.body.style.background = '#000';
 
+      if (isAndroid()) {
+        document.body.classList.add('android-hard');
+        applyAndroidFsOffset();
+      } else {
+        document.body.classList.remove('android-hard');
+      }
+
       try {
         if (window.Telegram?.WebApp?.requestFullscreen) {
           await Telegram.WebApp.requestFullscreen();
@@ -696,6 +777,7 @@
     }
 
     async function exitFullscreenMode() {
+
       document.body.classList.remove('expanded', 'ui-hidden', 'portrait', 'landscape');
       document.body.style.background = '';
 
@@ -992,11 +1074,13 @@
 
     // ===== Resize / orientation =====
     window.addEventListener('resize', () => {
+      if (document.body.classList.contains('android-hard')) applyAndroidFsOffset();
       applyFitMode();
       if (isExpanded()) armAutoHide();
     });
 
     window.addEventListener('orientationchange', () => {
+      if (document.body.classList.contains('android-hard')) applyAndroidFsOffset();
       applyFitMode();
       if (isExpanded()) armAutoHide();
     });
@@ -1044,6 +1128,7 @@
     setAudioOnlyMode(audioOnly);
     wireGestures();
     updateFullscreenButton();
+    if (isAndroid()) applyAndroidFsOffset();
     applyFitMode();
 
     const cachedUrl = localStorage.getItem(CACHE_URL_KEY);

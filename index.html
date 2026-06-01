@@ -1131,10 +1131,12 @@
     if (isAndroid()) {
     applyAndroidFsOffset();
     // Временный debug — показываем offset
-    setTimeout(() => {
+    const showOffset = () => {
       const offset = getAndroidFsOffset();
-      setStatus('Offset: ' + offset + 'px | vh: ' + window.innerHeight + ' | vvh: ' + (window.visualViewport?.height || 'n/a'));
-    }, 1000);
+      setStatus('Offset: ' + offset + 'px | vh:' + window.innerHeight + ' vv:' + (window.visualViewport?.height||'?'));
+    };
+    showOffset();
+    setInterval(showOffset, 2000);
   }
     applyFitMode();
 

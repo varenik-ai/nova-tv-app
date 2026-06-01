@@ -249,15 +249,37 @@
   function openFullscreen() {
     const isExpanded = document.body.classList.contains('expanded');
     if (isExpanded) {
+      // Выход из режима
       document.body.classList.remove('expanded');
+      document.body.style.padding = '';
+      videoContainer.style.cssText = '';
+      video.style.cssText = '';
+      fullscreenBtn.style.cssText = '';
+      document.querySelector('.logo').style.display = '';
+      status.style.display = '';
       fullscreenBtn.textContent = t.fullscreen;
+      if (window._fsOrientationHandler) {
+        window.removeEventListener('orientationchange', window._fsOrientationHandler);
+        window.removeEventListener('resize', window._fsOrientationHandler);
+      }
     } else {
+      // Вход в режим
       document.body.classList.add('expanded');
-      fullscreenBtn.textContent = '✕ ' + t.fullscreen;
-      // Пробуем нативный fullscreen дополнительно
-      try {
-        if (window.Telegram?.WebApp?.requestFullscreen) Telegram.WebApp.requestFullscreen();
-      } catch(e) {}
+      document.body.style.padding = '0';
+      document.querySelector('.logo').style.display = 'none';
+      status.style.display = 'none';
+      videoContainer.style.cssText = 'max-width:none!important;width:100vw!important;height:100vh!important;border-radius:0!important;position:fixed!important;top:0!important;left:0!important;z-index:9999!important;background:#000!important;display:flex!important;align-items:center!important;justify-content:center!important;';
+      video.style.cssText = 'width:100vw!important;height:100vh!important;object-fit:cover!important;position:absolute!important;top:0!important;left:0!important;';
+      // Обновляем стиль при смене ориентации
+      window._fsOrientationHandler = () => {
+        if (document.body.classList.contains('expanded')) {
+          video.style.cssText = 'width:100vw!important;height:100vh!important;object-fit:cover!important;';
+        }
+      };
+      window.addEventListener('orientationchange', window._fsOrientationHandler);
+      window.addEventListener('resize', window._fsOrientationHandler);
+      fullscreenBtn.style.cssText = 'position:fixed!important;bottom:20px!important;right:20px!important;width:auto!important;margin:0!important;z-index:10000!important;opacity:0.8!important;';
+      fullscreenBtn.textContent = '✕';
     }
   }
 

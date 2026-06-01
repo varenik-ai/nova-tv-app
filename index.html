@@ -126,6 +126,7 @@
   }
 
   function unmute() {
+    userUnmuted = true;
     video.muted = false;
     video.volume = 1;
     unmuteBtn.style.display = 'none';

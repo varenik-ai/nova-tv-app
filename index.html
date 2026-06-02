@@ -15,7 +15,7 @@
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
       color: white;
       overflow: hidden;
-      touch-action: manipulation;
+      touch-action: pan-x pan-y;
     }
 
     .logo {
@@ -36,7 +36,7 @@
       flex: 1;
       background: #000;
       position: relative;
-      overflow: hidden;
+      overflow: visible;
       transition: transform 0.4s ease;
       touch-action: pinch-zoom;
     }
@@ -123,28 +123,6 @@
     .btn.danger { background: #e63946; }
     .btn.reload { background: #333; }
 
-    /* Quality menu */
-    .quality-menu {
-      position: absolute;
-      bottom: 130px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(15,15,25,0.98);
-      border-radius: 12px;
-      padding: 8px 0;
-      min-width: 160px;
-      display: none;
-      z-index: 40;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-    }
-    .quality-item {
-      padding: 12px 20px;
-      text-align: center;
-      cursor: pointer;
-      font-size: 14px;
-    }
-    .quality-item:hover, .quality-item.active { background: #e63946; }
-
     /* Status */
     #status {
       font-size: 13px;
@@ -200,11 +178,9 @@
         <button id="reload-btn" class="btn reload" style="display:none"></button>
         <button id="unmute-btn" class="btn danger" style="display:none"></button>
         <button id="mode-btn" class="btn"></button>
-        <button id="quality-btn" class="btn"></button>
         <button id="fullscreen-btn" class="btn"></button>
       </div>
 
-      <div class="quality-menu" id="quality-menu"></div>
     </div>
 
     <audio id="audio-bg" style="display:none" muted></audio>

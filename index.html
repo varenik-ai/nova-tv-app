@@ -245,7 +245,7 @@
   const PROXY_BASE  = 'https://nova-proxy-eight.vercel.app/api/proxy?url=';
   const CACHE_KEY   = 'nova_tv_last_url_v4';
   const MODE_KEY    = 'nova_tv_audio_only_v4';
-  const SCALE       = 1.06;
+  const SCALE       = 1.08;
 
   const video       = document.getElementById('video');
   const container   = document.getElementById('video-container');
@@ -265,6 +265,11 @@
   let hideTimeout = null;
   let userPaused = false;
   let audioOnly = localStorage.getItem(MODE_KEY) === '1';
+  let userUnmuted = false;
+
+  function enforceMute() {
+    if (!userUnmuted) video.muted = true;
+  }
   let isExpanded = false;
   let wakeLockSentinel = null;
   let statsTimer = null;
@@ -293,7 +298,7 @@
         try { await tg.requestFullscreen(); } catch(e) {}
       }
     }
-    setTimeout(() => { container.style.transform = `scale(${SCALE})`; }, 400);
+    setTimeout(() => { container.style.transform = `scale(${SCALE}) translateY(-2%)`; }, 400);
     isExpanded = true;
     fullscreenBtn.textContent = t.exitFs;
     showUI();
@@ -390,6 +395,7 @@
 
   function loadStream(url) {
     currentUrl = url;
+    userUnmuted = false;
     localStorage.setItem(CACHE_KEY, url);
     const proxied = PROXY_BASE + encodeURIComponent(url);
     cleanUp();
@@ -469,6 +475,7 @@
         if (isAndroid() && a) { a.muted = false; if (a.paused) { try { await a.play(); } catch(e) {} } }
       }, 300);
     } else {
+      enforceMute();
       if (isAndroid()) { const a = document.getElementById('audio-bg'); if (a) a.muted = true; }
       if (!userPaused && video.paused) { try { await video.play(); } catch(e) {} }
     }
@@ -498,7 +505,7 @@
 
   // ── Buttons ────────────────────────────────────────────────────────────────
   reloadBtn.onclick    = () => { userPaused = false; init(); };
-  unmuteBtn.onclick    = () => { video.muted = false; video.volume = 1; unmuteBtn.style.display = 'none'; };
+  unmuteBtn.onclick    = () => { userUnmuted = true; video.muted = false; video.volume = 1; unmuteBtn.style.display = 'none'; };
   modeBtn.onclick      = () => { setAudioMode(!audioOnly); };
   qualityBtn.onclick   = showQualityMenu;
   fullscreenBtn.onclick = toggleImmersive;

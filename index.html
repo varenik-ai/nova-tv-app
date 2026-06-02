@@ -164,6 +164,7 @@
         <button id="unmute-btn" class="btn danger" style="display:none"></button>
         <button id="mode-btn" class="btn"></button>
         <button id="fullscreen-btn" class="btn"></button>
+        <button id="pip-btn" class="btn" style="display:none"></button>
       </div>
 
     </div>
@@ -497,6 +498,26 @@
   unmuteBtn.onclick    = () => { userUnmuted = true; video.muted = false; video.volume = 1; unmuteBtn.style.display = 'none'; };
   modeBtn.onclick      = () => { setAudioMode(!audioOnly); };
   fullscreenBtn.onclick = toggleImmersive;
+
+  // Picture-in-Picture
+  const pipBtn = document.getElementById('pip-btn');
+  if (document.pictureInPictureEnabled) {
+    pipBtn.style.display = 'block';
+    pipBtn.textContent = '🎥 PiP';
+    pipBtn.onclick = async () => {
+      try {
+        if (document.pictureInPictureElement) {
+          await document.exitPictureInPicture();
+          pipBtn.textContent = '🎥 PiP';
+        } else {
+          await video.requestPictureInPicture();
+          pipBtn.textContent = '✕ PiP';
+        }
+      } catch(e) {
+        console.log('PiP not supported:', e);
+      }
+    };
+  }
 
   // ── Start ──────────────────────────────────────────────────────────────────
   setAudioMode(audioOnly);

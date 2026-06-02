@@ -245,7 +245,7 @@
   const PROXY_BASE  = 'https://nova-proxy-eight.vercel.app/api/proxy?url=';
   const CACHE_KEY   = 'nova_tv_last_url_v4';
   const MODE_KEY    = 'nova_tv_audio_only_v4';
-  const SCALE       = 1.08;
+  const SCALE       = 1.12;
 
   const video       = document.getElementById('video');
   const container   = document.getElementById('video-container');
@@ -298,7 +298,7 @@
         try { await tg.requestFullscreen(); } catch(e) {}
       }
     }
-    setTimeout(() => { container.style.transform = `scale(${SCALE}) translateY(-2%)`; }, 400);
+    setTimeout(() => { container.style.transition = 'transform 0.6s ease'; container.style.transform = `scale(${SCALE}) translateY(-8%)`; }, 250);
     isExpanded = true;
     fullscreenBtn.textContent = t.exitFs;
     showUI();
@@ -461,6 +461,7 @@
     if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
   });
   video.addEventListener('play', () => {
+    setTimeout(enforceMute, 300);
     userPaused = false;
     if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
     if (isAndroid()) { const a = document.getElementById('audio-bg'); if (a) a.muted = true; }
@@ -513,6 +514,7 @@
   // ── Start ──────────────────────────────────────────────────────────────────
   setAudioMode(audioOnly);
   init();
+  setTimeout(enterImmersive, 1500);
   setInterval(() => {
     fetch(STREAM_API + '?t=' + Date.now(), { cache: 'no-store' })
       .then(r => r.json()).then(d => { if (d.url) currentUrl = d.url; }).catch(() => {});

@@ -460,7 +460,17 @@
     }
   });
   window.addEventListener('pageshow', async () => { if (!userPaused && video.paused) { try { await video.play(); } catch(e) {} } });
-  window.addEventListener('orientationchange', () => { if (isExpanded) { setTimeout(() => { container.style.transform = `scale(${SCALE}) translateY(-2%)`; }, 300); } });
+  window.addEventListener('orientationchange', () => {
+    setTimeout(() => {
+      if (isExpanded) {
+        container.style.transition = 'transform 0.6s ease';
+        container.style.transform = `scale(${SCALE}) translateY(-8%)`;
+        // object-fit по ориентации
+        const isLandscape = window.innerWidth > window.innerHeight;
+        video.style.objectFit = isLandscape ? 'cover' : 'contain';
+      }
+    }, 400);
+  });
 
   // ── Init ──────────────────────────────────────────────────────────────────
   async function init() {

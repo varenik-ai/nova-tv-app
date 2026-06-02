@@ -298,7 +298,7 @@
         try { await tg.requestFullscreen(); } catch(e) {}
       }
     }
-    setTimeout(() => { container.style.transform = `scale(${SCALE}) translateY(-2%)`; }, 400);
+    setTimeout(() => { container.style.transform = `scale(${SCALE}) translateY(-2%)`; alert('scale: ' + container.style.transform); }, 400);
     isExpanded = true;
     fullscreenBtn.textContent = t.exitFs;
     showUI();
@@ -481,7 +481,7 @@
     }
   });
   window.addEventListener('pageshow', async () => { if (!userPaused && video.paused) { try { await video.play(); } catch(e) {} } });
-  window.addEventListener('orientationchange', () => { if (isExpanded) { setTimeout(() => { container.style.transform = `scale(${SCALE})`; }, 300); } });
+  window.addEventListener('orientationchange', () => { if (isExpanded) { setTimeout(() => { container.style.transform = `scale(${SCALE}) translateY(-2%)`; }, 300); } });
 
   // ── Init ──────────────────────────────────────────────────────────────────
   async function init() {

@@ -461,6 +461,30 @@
     }
   });
   window.addEventListener('pageshow', async () => { if (!userPaused && video.paused) { try { await video.play(); } catch(e) {} } });
+  // Fullscreen change — синхронизируем состояние
+  function onFullscreenChange() {
+    const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+    if (fsEl) {
+      isExpanded = true;
+      fullscreenBtn.textContent = t.exitFs;
+      // Автоскрытие UI через 3 сек
+      overlay.classList.remove('hidden');
+      if (hideTimeout) clearTimeout(hideTimeout);
+      hideTimeout = setTimeout(() => overlay.classList.add('hidden'), 3000);
+      // Видео на весь экран
+      const isLandscape = window.innerWidth > window.innerHeight;
+      video.style.objectFit = isLandscape ? 'cover' : 'contain';
+    } else {
+      isExpanded = false;
+      fullscreenBtn.textContent = t.fullscreen;
+      overlay.classList.remove('hidden');
+      if (hideTimeout) { clearTimeout(hideTimeout); hideTimeout = null; }
+      video.style.objectFit = 'contain';
+    }
+  }
+  document.addEventListener('fullscreenchange', onFullscreenChange);
+  document.addEventListener('webkitfullscreenchange', onFullscreenChange);
+
   window.addEventListener('orientationchange', () => {
     setTimeout(() => {
       if (isExpanded) {

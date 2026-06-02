@@ -261,11 +261,16 @@
 
   // ── Immersive / Scale trick ────────────────────────────────────────────
   async function enterImmersive() {
+    document.body.classList.add('expanded');
     if (tg) {
       try { tg.setHeaderColor('#000000'); tg.setBackgroundColor('#000000'); } catch(e) {}
       if (tg.requestFullscreen && !tg.isFullscreen) {
         try { await tg.requestFullscreen(); } catch(e) {}
       }
+    }
+    // Блокируем ориентацию landscape — Telegram скрывает шапку
+    if (isAndroid() && window.screen?.orientation?.lock) {
+      try { await screen.orientation.lock('landscape'); } catch(e) {}
     }
     setTimeout(() => { container.style.transition = 'transform 0.6s ease'; container.style.transform = `scale(${SCALE}) translateY(-8%)`; }, 250);
     isExpanded = true;
@@ -273,14 +278,18 @@
     showUI();
   }
 
-  function exitImmersive() {
+  async function exitImmersiveMode() {
+    document.body.classList.remove('expanded');
     container.style.transform = 'scale(1)';
     isExpanded = false;
     fullscreenBtn.textContent = t.fullscreen;
     overlay.classList.remove('hidden');
-    if (tg?.exitFullscreen) { try { tg.exitFullscreen(); } catch(e) {} }
+    if (tg?.exitFullscreen) { try { await tg.exitFullscreen(); } catch(e) {} }
+    if (window.screen?.orientation?.unlock) { try { screen.orientation.unlock(); } catch(e) {} }
     if (hideTimeout) { clearTimeout(hideTimeout); hideTimeout = null; }
   }
+
+  function exitImmersive() { exitImmersiveMode(); }
 
   function toggleImmersive() {
     if (isExpanded) exitImmersive(); else enterImmersive();

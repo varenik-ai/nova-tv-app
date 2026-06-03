@@ -519,6 +519,14 @@
     }
   };
 
+  // Возобновляем воспроизведение после закрытия PiP
+  video.addEventListener('leavepictureinpicture', async () => {
+    pipBtn.textContent = '🎥 PiP';
+    if (video.paused) {
+      try { await video.play(); } catch(e) {}
+    }
+  });
+
   // ── Start ──────────────────────────────────────────────────────────────────
   setAudioMode(audioOnly);
   init();

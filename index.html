@@ -544,7 +544,7 @@
   // ── Start ──────────────────────────────────────────────────────────────────
   setAudioMode(audioOnly);
   init();
-  setTimeout(enterImmersive, 1500);
+  // Автозапуск fullscreen отключён — пользователь нажимает кнопку
   setInterval(() => {
     fetch(STREAM_API + '?t=' + Date.now(), { cache: 'no-store' })
       .then(r => r.json()).then(d => { if (d.url) currentUrl = d.url; }).catch(() => {});

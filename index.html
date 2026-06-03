@@ -165,6 +165,7 @@
         <button id="mode-btn" class="btn"></button>
         <button id="fullscreen-btn" class="btn"></button>
         <button id="pip-btn" class="btn" style="display:none"></button>
+        <button id="hub-btn" class="btn">🇧🇬 Каналы</button>
       </div>
 
     </div>
@@ -520,6 +521,19 @@
   };
 
   // Возобновляем воспроизведение после закрытия PiP
+  // Кнопка возврата в хаб
+  const hubBtn = document.getElementById('hub-btn');
+  if (hubBtn) {
+    hubBtn.onclick = () => {
+      const hubUrl = 'https://varenik-ai.github.io/bulgaria-tv-hub/';
+      if (window.Telegram?.WebApp?.openLink) {
+        Telegram.WebApp.openLink(hubUrl);
+      } else {
+        window.open(hubUrl, '_blank');
+      }
+    };
+  }
+
   video.addEventListener('leavepictureinpicture', async () => {
     pipBtn.textContent = '🎥 PiP';
     if (video.paused) {

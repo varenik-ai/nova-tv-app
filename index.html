@@ -501,23 +501,23 @@
 
   // Picture-in-Picture
   const pipBtn = document.getElementById('pip-btn');
-  if (document.pictureInPictureEnabled) {
-    pipBtn.style.display = 'block';
-    pipBtn.textContent = '🎥 PiP';
-    pipBtn.onclick = async () => {
-      try {
-        if (document.pictureInPictureElement) {
-          await document.exitPictureInPicture();
-          pipBtn.textContent = '🎥 PiP';
-        } else {
-          await video.requestPictureInPicture();
-          pipBtn.textContent = '✕ PiP';
-        }
-      } catch(e) {
-        console.log('PiP not supported:', e);
+  pipBtn.style.display = 'block';
+  pipBtn.textContent = '🎥 PiP';
+  pipBtn.onclick = async () => {
+    try {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+        pipBtn.textContent = '🎥 PiP';
+      } else if (video.requestPictureInPicture) {
+        await video.requestPictureInPicture();
+        pipBtn.textContent = '✕ PiP';
+      } else if (video.webkitSetPresentationMode) {
+        video.webkitSetPresentationMode('picture-in-picture');
       }
-    };
-  }
+    } catch(e) {
+      console.log('PiP not supported:', e);
+    }
+  };
 
   // ── Start ──────────────────────────────────────────────────────────────────
   setAudioMode(audioOnly);

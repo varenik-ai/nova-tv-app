@@ -384,7 +384,6 @@
           unmuteBtn.style.display = audioOnly ? 'none' : 'block';
           setupMediaSession();
           if (!isIOS()) requestWakeLock();
-          enterImmersive();
         } catch(e) { setStatus('pressPlay'); }
       });
       hls.on(Hls.Events.ERROR, (e, data) => {
@@ -402,7 +401,6 @@
         unmuteBtn.style.display = audioOnly ? 'none' : 'block';
         setupMediaSession();
         if (!isIOS()) requestWakeLock();
-        enterImmersive();
       }).catch(() => setStatus('pressPlay'));
     }
   }
@@ -459,6 +457,16 @@
       video.style.objectFit = 'contain';
     }
   }
+  // iOS: возобновляем после выхода из fullscreen
+  video.addEventListener('webkitendfullscreen', async () => {
+    if (video.paused) {
+      try { await video.play(); } catch(e) {}
+    }
+    isExpanded = false;
+    fullscreenBtn.textContent = t.fullscreen;
+    overlay.classList.remove('hidden');
+  });
+
   document.addEventListener('fullscreenchange', onFullscreenChange);
   document.addEventListener('webkitfullscreenchange', onFullscreenChange);
 

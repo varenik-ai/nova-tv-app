@@ -534,7 +534,7 @@
   if (hubBtn) {
     hubBtn.onclick = () => {
       if (window.Telegram?.WebApp) {
-        Telegram.WebApp.close();
+        Telegram.WebApp.openTelegramLink('https://t.me/BulgariaTV_Live');
       } else {
         window.open('https://t.me/BulgariaTV_Live', '_blank');
       }

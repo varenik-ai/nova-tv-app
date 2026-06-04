@@ -533,11 +533,7 @@
   const hubBtn = document.getElementById('hub-btn');
   if (hubBtn) {
     hubBtn.onclick = () => {
-      if (window.Telegram?.WebApp) {
-        Telegram.WebApp.openTelegramLink('https://t.me/BulgariaTV_Live_bot/bulgariatv_live_bot');
-      } else {
-        window.open('https://t.me/BulgariaTV_Live', '_blank');
-      }
+      window.location.href = 'https://varenik-ai.github.io/bulgaria-tv-hub/';
     };
   }
 

@@ -533,11 +533,10 @@
   const hubBtn = document.getElementById('hub-btn');
   if (hubBtn) {
     hubBtn.onclick = () => {
-      const hubUrl = 'https://t.me/BulgariaTV_Live';
-      if (window.Telegram?.WebApp?.openLink) {
-        Telegram.WebApp.openLink(hubUrl);
+      if (window.Telegram?.WebApp) {
+        Telegram.WebApp.close();
       } else {
-        window.open(hubUrl, '_blank');
+        window.open('https://t.me/BulgariaTV_Live', '_blank');
       }
     };
   }

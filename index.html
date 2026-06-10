@@ -94,6 +94,10 @@
 <script>
 const tg = window.Telegram?.WebApp;
 
+// ── Helpers (объявляем ДО использования) ────────────────────────────────────
+function isIOS() { return /iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)||(tg?.platform==='ios'); }
+function isAndroid() { return /Android/i.test(navigator.userAgent)||(tg?.platform==='android'); }
+
 // ── Safe area ───────────────────────────────────────────────────────────────
 function updateSafeArea() {
   const tgTop = tg?.contentSafeAreaInsets?.top || tg?.safeAreaInsets?.top || 0;
@@ -128,9 +132,6 @@ function getLang() {
 }
 const t = T[getLang()];
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
-function isIOS() { return /iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)||(tg?.platform==='ios'); }
-function isAndroid() { return /Android/i.test(navigator.userAgent)||(tg?.platform==='android'); }
 
 // ── Elements ────────────────────────────────────────────────────────────────
 const video         = document.getElementById('video');
@@ -352,11 +353,10 @@ unmuteBtn.onclick = () => {
   }
 };
 
-// ── Hub button ────────────────────────────────────────────────────────────────
-hubBtn.onclick = () => { window.location.href = 'https://varenik-ai.github.io/bulgaria-tv-hub/'; };
-
-// ── Back button ───────────────────────────────────────────────────────────────
-document.getElementById('back-btn').onclick = () => { try { tg.close(); } catch(e) {} };
+// ── Hub button + Back button — оба закрывают Mini App ────────────────────────
+function closeApp() { try { Telegram.WebApp.close(); } catch(e) {} }
+hubBtn.onclick = closeApp;
+document.getElementById('back-btn').onclick = closeApp;
 
 // ── Stream ────────────────────────────────────────────────────────────────────
 function stopStream() {

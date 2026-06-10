@@ -50,7 +50,6 @@
 
 <div id="player-screen">
   <div class="player-header">
-    <button class="back-btn" id="back-btn">✕</button>
     <span class="ch-title-bar" id="ch-title">Nova TV</span>
     <span class="live-badge-top" id="live-badge-top">LIVE</span>
   </div>
@@ -114,7 +113,6 @@ function isAndroid() { return /Android/i.test(navigator.userAgent)||(window.Tele
 
 const hubScreen=document.getElementById("hub-screen");
 const playerScreen=document.getElementById("player-screen");
-const backBtn=document.getElementById("back-btn");
 const chTitle=document.getElementById("ch-title");
 const liveBadgeTop=document.getElementById("live-badge-top");
 
@@ -270,7 +268,11 @@ unmuteBtn.onclick=()=>{
   else { video.muted=true; userUnmuted=false; unmuteBtn.textContent=t.unmute; }
 };
 modeBtn.onclick=()=>setAudioMode(!audioOnly);
-backBtn.onclick=()=>{ try{ Telegram.WebApp.close(); }catch(e){} };
+// Нативная кнопка назад Telegram — работает поверх TG UI
+if (tg?.BackButton) {
+  tg.BackButton.show();
+  tg.BackButton.onClick(() => { try { tg.close(); } catch(e) {} });
+}
 hubBtn.onclick=()=>{ try{ Telegram.WebApp.close(); }catch(e){} };
 
 // ── Stream ─────────────────────────────────────────────────────────────────────

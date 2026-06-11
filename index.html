@@ -32,9 +32,10 @@
     .ch-title-bar { font-size:15px; font-weight:700; }
     .live-badge-top { background:#e63946; color:#fff; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; margin-left:6px; display:none; }
     #video-container { width:100%; flex:1; background:#000; position:relative; overflow:visible; touch-action:pinch-zoom; }
+    /* Fullscreen на весь player-screen — хедер остаётся видимым */
+    #player-screen.css-fs { position:fixed !important; inset:0 !important; width:100vw !important; height:100vh !important; z-index:9999 !important; display:flex !important; flex-direction:column !important; align-items:center !important; }
+    #player-screen:fullscreen, #player-screen:-webkit-full-screen { display:flex; flex-direction:column; align-items:center; width:100vw; height:100vh; background:#0a0a0a; }
     #video-container.css-fs { position:fixed !important; inset:0 !important; width:100vw !important; height:100vh !important; z-index:9999 !important; }
-    #video-container.css-fs .live-badge, #video-container:fullscreen .live-badge, #video-container:-webkit-full-screen .live-badge { display:none !important; }
-    #video-container.css-fs video { width:100vw !important; height:100vh !important; }
     #video-container.css-fs .overlay { display:none !important; }
     #video-container:fullscreen .overlay, #video-container:-webkit-full-screen .overlay { display:none !important; }
     video { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; z-index:1; }
@@ -168,20 +169,21 @@ function showUI() {
 function enterFs() {
   if(video.webkitEnterFullscreen && isIOS()) { video.webkitEnterFullscreen(); isExpanded=true; fullscreenBtn.textContent=t.exitFs; return; }
   try { if(tg?.requestFullscreen) tg.requestFullscreen(); } catch(e) {}
-  if(container.requestFullscreen) {
-    container.requestFullscreen()
-      .then(()=>{ container.classList.remove("css-fs"); document.body.style.overflow=""; })
-      .catch(()=>{ container.classList.add("css-fs"); document.body.style.overflow="hidden"; });
-  } else if(container.webkitRequestFullscreen) {
-    container.webkitRequestFullscreen();
+  // Fullscreen на весь player-screen: TG-шапка исчезает, наш хедер остаётся
+  if(playerScreen.requestFullscreen) {
+    playerScreen.requestFullscreen()
+      .then(()=>{ playerScreen.classList.remove("css-fs"); container.classList.remove("css-fs"); document.body.style.overflow=""; })
+      .catch(()=>{ playerScreen.classList.add("css-fs"); document.body.style.overflow="hidden"; });
+  } else if(playerScreen.webkitRequestFullscreen) {
+    playerScreen.webkitRequestFullscreen();
   } else {
-    container.classList.add("css-fs"); document.body.style.overflow="hidden";
+    playerScreen.classList.add("css-fs"); document.body.style.overflow="hidden";
   }
   isExpanded=true; fullscreenBtn.textContent=t.exitFs;
 }
 function exitFs() {
   try { if(document.exitFullscreen) document.exitFullscreen(); else if(document.webkitExitFullscreen) document.webkitExitFullscreen(); } catch(e) {}
-  container.classList.remove("css-fs"); document.body.style.overflow="";
+  playerScreen.classList.remove("css-fs"); container.classList.remove("css-fs"); document.body.style.overflow="";
   isExpanded=false; fullscreenBtn.textContent=t.fullscreen;
   overlay.classList.remove("hidden"); if(hideTimeout){clearTimeout(hideTimeout);hideTimeout=null;}
 }
@@ -312,6 +314,8 @@ function openChannel(ch){
   currentCh=ch; hubScreen.style.display="none"; playerScreen.style.display="flex";
   chTitle.textContent=ch.name; audioOnly=false; document.body.classList.remove("audio-only");
   modeBtn.textContent=t.audioMode; stopStream(); init();
+  // Скрываем TG-шапку через fullscreen player-screen (user gesture)
+  if(isAndroid()||isIOS()) enterFs();
 }
 function goToHub(){ stopStream(); playerScreen.style.display="none"; hubScreen.style.display="flex"; currentCh=null; }
 backBtn.onclick=()=>{ try{ Telegram.WebApp.close(); }catch(e){} };

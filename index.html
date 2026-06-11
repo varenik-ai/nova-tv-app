@@ -13,6 +13,18 @@
     * { margin:0; padding:0; box-sizing:border-box; }
     html,body { background:#0a0a0a; height:100%; font-family:-apple-system,BlinkMacSystemFont,sans-serif; color:white; overflow:hidden; touch-action:pan-x pan-y pinch-zoom; }
     #hub-screen { display:flex; flex-direction:column; align-items:center; height:100%; overflow-y:auto; padding:24px 16px 40px; padding-top:calc(24px + max(var(--tg-safe-top, 0px), env(safe-area-inset-top, 0px))); }
+    .hub-logo { font-size:26px; font-weight:900; color:#e63946; letter-spacing:2px; margin-bottom:8px; text-transform:uppercase; }
+    .hub-logo span { color:white; }
+    .hub-sub { font-size:13px; color:#555; margin-bottom:24px; }
+    .channels-grid { width:100%; max-width:560px; display:flex; flex-direction:column; gap:10px; }
+    .channel-card { background:#1a1a1a; border:1px solid #2a2a2a; border-radius:14px; padding:16px 18px; display:flex; align-items:center; gap:14px; cursor:pointer; transition:all .2s; }
+    .channel-card:active { opacity:.75; transform:scale(.98); }
+    .ch-icon { width:52px; height:52px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:900; flex-shrink:0; overflow:hidden; }
+    .ch-icon img { width:52px; height:52px; object-fit:cover; display:block; }
+    .ch-name { font-size:16px; font-weight:700; margin-bottom:3px; }
+    .ch-desc { font-size:12px; color:#555; }
+    .live-dot { width:8px; height:8px; background:#e63946; border-radius:50%; animation:pulse 1.2s infinite; flex-shrink:0; }
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.25} }
     #player-screen { display:none; flex-direction:column; align-items:center; height:100%; }
     .player-header { width:100%; display:flex; align-items:center; gap:10px; padding:10px 14px; padding-top:calc(10px + max(var(--tg-safe-top, 0px), env(safe-area-inset-top, 0px))); background:#0d0d0d; border-bottom:1px solid #1e1e1e; flex-shrink:0; }
     .back-btn { background:#1a1a1a; border:1px solid #333; border-radius:8px; padding:7px 12px; color:#aaa; font-size:14px; cursor:pointer; }
@@ -41,19 +53,19 @@
     .btn.reload { background:#333; }
     #status { font-size:13px; color:#888; text-align:center; padding:8px 0 0; flex-shrink:0; }
     .dot { display:inline-block; width:8px; height:8px; background:#e63946; border-radius:50%; margin-right:6px; animation:pulse 1.2s infinite; vertical-align:middle; }
-    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.25} }
   </style>
 </head>
 <body>
 
 <div id="hub-screen">
-  <div style="font-size:28px;font-weight:900;color:#e63946;letter-spacing:2px;text-transform:uppercase;margin-top:40px;">NOVA <span style="color:white">TV</span></div>
-  <div style="font-size:13px;color:#555;margin-top:8px;">Прямой эфир — Бесплатно — 24/7</div>
+  <div class="hub-logo">NOVA <span>TV</span></div>
+  <div class="hub-sub">Прямой эфир — Бесплатно — 24/7</div>
+  <div class="channels-grid" id="channels-grid"></div>
 </div>
 
 <div id="player-screen">
   <div class="player-header">
-    <button class="back-btn" id="back-btn">← Закрыть</button>
+    <button class="back-btn" id="back-btn">← Каналы</button>
     <span class="ch-title-bar" id="ch-title">Nova TV</span>
     <span class="live-badge-top" id="live-badge-top">LIVE</span>
   </div>
@@ -68,7 +80,6 @@
         <button id="mode-btn" class="btn"></button>
         <button id="fullscreen-btn" class="btn"></button>
         <button id="pip-btn" class="btn" style="display:none"></button>
-        <button id="hub-btn" class="btn">🇧🇬 Каналы</button>
       </div>
     </div>
     <audio id="audio-bg" muted></audio>
@@ -95,6 +106,12 @@ if (tg) {
   setTimeout(updateSafeArea, 500);
 }
 
+const CHANNELS = [
+  { id:"nova_tv", name:"Nova TV", desc:"Прямой эфир", icon:"N", iconBg:"#e63946",
+    stream:"https://nova-proxy.dyaltd.workers.dev/api/stream",
+    proxy:"https://nova-proxy.dyaltd.workers.dev/api/proxy?url=" },
+];
+
 const T = {
   ru:{ loading:"Получаем поток...", connecting:"Подключение...", live:"ПРЯМОЙ ЭФИР", pressPlay:"Нажмите ▶", errorStream:"Ошибка — переподключаемся...", errorUrl:"Не удалось получить URL", errorServer:"Ошибка сервера", reconnect:"🔄 Переподключиться", unmute:"🔊 Включить звук", mute:"🔇 Выключить звук", fullscreen:"🔳 Полный экран", exitFs:"✕ Выйти", audioMode:"🎧 Только звук", videoMode:"🎥 Видео" },
   bg:{ loading:"Зареждаме...", connecting:"Свързване...", live:"НА ЖИВО", pressPlay:"Натиснете ▶", errorStream:"Грешка...", errorUrl:"Неуспешно", errorServer:"Грешка", reconnect:"🔄 Свържи", unmute:"🔊 Звук", mute:"🔇 Изкл.", fullscreen:"🔳 Екран", exitFs:"✕", audioMode:"🎧 Аудио", videoMode:"🎥 Видео" },
@@ -113,57 +130,23 @@ function getLang() {
 const t = T[getLang()];
 
 function isIOS() { return /iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1)||(window.Telegram?.WebApp?.platform==="ios"); }
-function isAndroid() { return /Android/i.test(navigator.userAgent)||(window.Telegram?.WebApp?.platform==="android"); }
-function enforceMute() { if(!userUnmuted) video.muted=true; }
+function isAndroid() { return /Android/i.test(navigator.userAgent); }
 
-const hubScreen=document.getElementById("hub-screen");
-const playerScreen=document.getElementById("player-screen");
-const backBtn=document.getElementById("back-btn");
-const chTitle=document.getElementById("ch-title");
-const liveBadgeTop=document.getElementById("live-badge-top");
+const hubScreen=document.getElementById("hub-screen"),playerScreen=document.getElementById("player-screen");
+const channelsGrid=document.getElementById("channels-grid"),backBtn=document.getElementById("back-btn");
+const chTitle=document.getElementById("ch-title"),liveBadgeTop=document.getElementById("live-badge-top");
 
-let currentCh=null, hls=null, hlsAudio=null, hideTimeout=null;
-let userPaused=false, audioOnly=false, userUnmuted=false, isExpanded=false, wakeLockSentinel=null;
+let currentCh=null,hls=null,hlsAudio=null,hideTimeout=null;
+let userPaused=false,audioOnly=false,userUnmuted=false,isExpanded=false,wakeLockSentinel=null;
 
-const video=document.getElementById("video"), container=document.getElementById("video-container");
-const overlay=document.getElementById("overlay"), statusEl=document.getElementById("status");
-const liveBadge=document.getElementById("live-badge"), reloadBtn=document.getElementById("reload-btn");
-const unmuteBtn=document.getElementById("unmute-btn"), modeBtn=document.getElementById("mode-btn");
-const fullscreenBtn=document.getElementById("fullscreen-btn"), pipBtn=document.getElementById("pip-btn");
-const hubBtn=document.getElementById("hub-btn");
+const video=document.getElementById("video"),container=document.getElementById("video-container");
+const overlay=document.getElementById("overlay"),statusEl=document.getElementById("status");
+const liveBadge=document.getElementById("live-badge"),reloadBtn=document.getElementById("reload-btn");
+const unmuteBtn=document.getElementById("unmute-btn"),modeBtn=document.getElementById("mode-btn");
+const fullscreenBtn=document.getElementById("fullscreen-btn"),pipBtn=document.getElementById("pip-btn");
 
 reloadBtn.textContent=t.reconnect; unmuteBtn.textContent=t.unmute;
 modeBtn.textContent=t.audioMode; fullscreenBtn.textContent=t.fullscreen;
-
-// ── PiP ───────────────────────────────────────────────────────────────────────
-if (isIOS()) {
-  if (typeof video.webkitSetPresentationMode === 'function') pipBtn.style.display = 'block';
-} else {
-  if (document.pictureInPictureEnabled || typeof video.requestPictureInPicture === 'function') pipBtn.style.display = 'block';
-}
-pipBtn.textContent = '🎥 PiP';
-pipBtn.onclick = async () => {
-  try {
-    if (document.pictureInPictureElement) {
-      await document.exitPictureInPicture(); pipBtn.textContent = '🎥 PiP'; return;
-    }
-    if (isIOS() && video.webkitSetPresentationMode) {
-      const was = userUnmuted;
-      if (!was) { video.muted=false; video.volume=1; userUnmuted=true; await new Promise(r=>setTimeout(r,200)); }
-      if (video.webkitPresentationMode==='picture-in-picture') {
-        video.webkitSetPresentationMode('inline'); pipBtn.textContent='🎥 PiP';
-        if (!was) { video.muted=true; userUnmuted=false; }
-      } else {
-        video.webkitSetPresentationMode('picture-in-picture'); pipBtn.textContent='✕ PiP';
-      }
-      return;
-    }
-    if (video.requestPictureInPicture) { await video.requestPictureInPicture(); pipBtn.textContent='✕ PiP'; }
-  } catch(e) { console.log('PiP:',e); }
-};
-video.addEventListener('enterpictureinpicture', ()=>{ pipBtn.textContent='✕ PiP'; });
-video.addEventListener('leavepictureinpicture', async ()=>{ pipBtn.textContent='🎥 PiP'; if(!userUnmuted) video.muted=true; if(video.paused){try{await video.play();}catch(e){}} });
-video.addEventListener('webkitpresentationmodechanged', ()=>{ if(video.webkitPresentationMode!=='picture-in-picture'){pipBtn.textContent='🎥 PiP'; if(!userUnmuted) video.muted=true;} });
 
 function setStatus(key,isError) {
   const msg=t[key]||key;
@@ -182,7 +165,6 @@ function showUI() {
   if(isExpanded&&!audioOnly) hideTimeout=setTimeout(()=>overlay.classList.add("hidden"),4000);
 }
 
-// ── Fullscreen ─────────────────────────────────────────────────────────────────
 function enterFs() {
   if(video.webkitEnterFullscreen && isIOS()) { video.webkitEnterFullscreen(); isExpanded=true; fullscreenBtn.textContent=t.exitFs; return; }
   try { if(tg?.requestFullscreen) tg.requestFullscreen(); } catch(e) {}
@@ -213,28 +195,42 @@ document.addEventListener("fullscreenchange",onFsChange);
 document.addEventListener("webkitfullscreenchange",onFsChange);
 video.addEventListener("webkitendfullscreen", async () => {
   isExpanded=false; fullscreenBtn.textContent=t.fullscreen; overlay.classList.remove("hidden");
-  setTimeout(()=>{ if(currentCh){stopStream();init();} },300);
+  setTimeout(() => { if(currentCh){stopStream();init();} }, 300);
 });
 
-// ── Gestures ──────────────────────────────────────────────────────────────────
 let lastTap=0;
 container.addEventListener("pointerup",e=>{ if(e.target.closest("button")) return; const now=Date.now(); if(now-lastTap<280){isExpanded?exitFs():enterFs();lastTap=0;return;} lastTap=now; setTimeout(()=>{if(Date.now()-lastTap>=270)showUI();},290); });
 container.addEventListener("pointermove",()=>{if(isExpanded)showUI();});
 container.addEventListener("touchstart",()=>{if(isExpanded)showUI();},{passive:true});
 
-// ── Wake Lock ──────────────────────────────────────────────────────────────────
+// PiP — только на iOS (webkitSetPresentationMode) + Android/Desktop (requestPictureInPicture)
+if (!isIOS() && !isAndroid()) { pipBtn.style.cssText=''; pipBtn.style.display='block'; }
+pipBtn.textContent='🎥 PiP';
+pipBtn.onclick=async()=>{
+  try {
+    if(document.pictureInPictureElement){ await document.exitPictureInPicture(); pipBtn.textContent='🎥 PiP'; }
+    else if(!isIOS()&&video.requestPictureInPicture){ await video.requestPictureInPicture(); pipBtn.textContent='✕ PiP'; }
+    else if(video.webkitSetPresentationMode){
+      userUnmuted=true; video.muted=false; video.volume=1;
+      await new Promise(r=>setTimeout(r,500));
+      video.webkitSetPresentationMode('picture-in-picture'); pipBtn.textContent='✕ PiP';
+    }
+  } catch(e){ console.log('PiP:',e); }
+};
+video.addEventListener('enterpictureinpicture',()=>{pipBtn.textContent='✕ PiP';});
+video.addEventListener('leavepictureinpicture',async()=>{ pipBtn.textContent='🎥 PiP'; userUnmuted=false; video.muted=true; if(video.paused){try{await video.play();}catch(e){}} });
+
 async function requestWakeLock(){try{if(!isIOS()&&"wakeLock"in navigator&&!wakeLockSentinel)wakeLockSentinel=await navigator.wakeLock.request("screen");}catch(e){}}
 
-// ── Media Session ──────────────────────────────────────────────────────────────
 function setupMediaSession(){
   if(!("mediaSession"in navigator)) return;
-  navigator.mediaSession.metadata=new MediaMetadata({title:"Nova TV България",artist:"Live 🔴",album:"Nova TV",artwork:[{src:"https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Nova_TV_Bulgaria_Logo.svg/512px-Nova_TV_Bulgaria_Logo.svg.png",sizes:"512x512",type:"image/png"}]});
+  const name=currentCh?currentCh.name:"Nova TV";
+  navigator.mediaSession.metadata=new MediaMetadata({title:name,artist:"Live 🔴",album:"Nova TV"});
   navigator.mediaSession.playbackState="playing";
   navigator.mediaSession.setActionHandler("play",async()=>{try{await video.play();}catch(e){}});
   navigator.mediaSession.setActionHandler("pause",()=>{video.pause();});
 }
 
-// ── Background playback ────────────────────────────────────────────────────────
 let pauseByUser=false;
 video.addEventListener("mousedown",()=>{pauseByUser=true;});
 video.addEventListener("touchstart",()=>{pauseByUser=true;},{passive:true});
@@ -244,40 +240,23 @@ video.addEventListener("play",()=>{
   userPaused=false;
   if(isAndroid()){ const a=document.getElementById("audio-bg"); if(a) a.muted=true; }
 });
-document.addEventListener('visibilitychange', async () => {
-  if (document.visibilityState === 'hidden') {
-    if (isIOS() || userPaused) return;
-    setTimeout(async () => {
-      if (video.paused) { try { await video.play(); } catch(e) {} }
-      const a = document.getElementById('audio-bg');
-      if (isAndroid() && a) { a.muted = false; if (a.paused) { try { await a.play(); } catch(e) {} } video.muted = true; }
-    }, 300);
+document.addEventListener('visibilitychange',async()=>{
+  if(document.visibilityState==='hidden'){
+    if(isIOS()||userPaused) return;
+    setTimeout(async()=>{
+      if(video.paused){try{await video.play();}catch(e){}}
+      const a=document.getElementById('audio-bg');
+      if(isAndroid()&&a){a.muted=false;if(a.paused){try{await a.play();}catch(e){}}video.muted=true;}
+    },300);
   } else {
     enforceMute();
-    if (isAndroid()) { const a = document.getElementById('audio-bg'); if (a) a.muted = true; }
-    if (!userPaused && video.paused) {
-      try { await video.play(); } catch(e) { if(currentCh){stopStream();init();} }
-    } else if (!userPaused && video.readyState < 2) {
-      if(currentCh){stopStream();init();}
-    }
+    if(isAndroid()){const a=document.getElementById('audio-bg');if(a)a.muted=true;}
+    if(!userPaused&&video.paused){try{await video.play();}catch(e){if(currentCh){stopStream();init();}}}
+    else if(!userPaused&&video.readyState<2){if(currentCh){stopStream();init();}}
   }
 });
-window.addEventListener('pageshow', async () => {
-  if (!userPaused && video.paused) { try { await video.play(); } catch(e) {} }
-});
+window.addEventListener('pageshow',async()=>{if(!userPaused&&video.paused){try{await video.play();}catch(e){}}});
 
-// ── Buttons ───────────────────────────────────────────────────────────────────
-reloadBtn.onclick=()=>{userPaused=false;init();};
-unmuteBtn.onclick=()=>{
-  const ab=document.getElementById('audio-bg');
-  if(video.muted){ video.muted=false; video.volume=1; userUnmuted=true; unmuteBtn.textContent="🔇 "+t.mute; if(ab){ab.muted=true;ab.pause();} }
-  else { video.muted=true; userUnmuted=false; unmuteBtn.textContent=t.unmute; }
-};
-modeBtn.onclick=()=>setAudioMode(!audioOnly);
-backBtn.onclick=()=>{ try{ Telegram.WebApp.close(); }catch(e){} };
-hubBtn.onclick=()=>{ try{ Telegram.WebApp.close(); }catch(e){} };
-
-// ── Stream ─────────────────────────────────────────────────────────────────────
 function stopStream(){
   if(hls){hls.destroy();hls=null;} if(hlsAudio){hlsAudio.destroy();hlsAudio=null;}
   video.src=""; liveBadge.style.display="none"; liveBadgeTop.style.display="none";
@@ -307,50 +286,37 @@ function loadStream(url){
     video.play().then(()=>{unmuteBtn.style.display=audioOnly?"none":"block";setupMediaSession();if(!isIOS())requestWakeLock();}).catch(()=>setStatus("pressPlay"));
   }
 }
-
 async function init(){
   if(!currentCh) return;
   setStatus("loading"); reloadBtn.style.display="none"; unmuteBtn.style.display="none";
-  const cached=localStorage.getItem(currentCh.cacheKey);
-  if(cached) loadStream(cached);
-  try{
-    const r=await fetch(currentCh.stream+"?t="+Date.now(),{cache:"no-store"});
-    const d=await r.json();
-    if(d.url){ localStorage.setItem(currentCh.cacheKey,d.url); loadStream(d.url); }
-    else if(!cached) setStatus("errorUrl",true);
-  }catch(e){ if(!cached) setStatus("errorServer",true); }
+  try{ const r=await fetch(currentCh.stream+"?t="+Date.now(),{cache:"no-store"}); const d=await r.json(); if(d.url)loadStream(d.url); else setStatus("errorUrl",true); }catch(e){setStatus("errorServer",true);}
 }
 
-// ── Channel ────────────────────────────────────────────────────────────────────
-const CHANNEL = {
-  id:"nova_tv",
-  name:"Nova TV",
-  stream:"https://nova-proxy.dyaltd.workers.dev/api/stream",
-  proxy:"https://nova-proxy.dyaltd.workers.dev/api/proxy?url=",
-  cacheKey:"nova_tv_last_url_v4"
+reloadBtn.onclick=()=>{userPaused=false;init();};
+unmuteBtn.onclick=()=>{
+  const ab=document.getElementById('audio-bg');
+  if(video.muted){ video.muted=false; video.volume=1; userUnmuted=true; unmuteBtn.textContent="🔇 "+t.mute; if(ab){ab.muted=true;ab.pause();} }
+  else { video.muted=true; userUnmuted=false; unmuteBtn.textContent=t.unmute; if(ab&&isIOS()){ab.muted=false;ab.volume=0;ab.play().catch(()=>{});} }
 };
+modeBtn.onclick=()=>setAudioMode(!audioOnly);
 
+function buildHub(){
+  channelsGrid.innerHTML="";
+  CHANNELS.forEach(ch=>{
+    const card=document.createElement("div"); card.className="channel-card";
+    card.innerHTML=`<div class="ch-icon" style="background:${ch.iconBg}">${ch.icon}</div><div><div class="ch-name">${ch.name}</div><div class="ch-desc">${ch.desc}</div></div><div class="live-dot"></div>`;
+    card.onclick=()=>openChannel(ch); channelsGrid.appendChild(card);
+  });
+}
 function openChannel(ch){
-  currentCh=ch;
-  hubScreen.style.display="none";
-  playerScreen.style.display="flex";
-  chTitle.textContent=ch.name;
-  audioOnly=false; document.body.classList.remove("audio-only");
-  modeBtn.textContent=t.audioMode;
-  stopStream(); init();
-  // Обновление URL каждые 20 мин
-  setInterval(()=>{
-    fetch(ch.stream+"?t="+Date.now(),{cache:"no-store"})
-      .then(r=>r.json()).then(d=>{if(d.url){localStorage.setItem(ch.cacheKey,d.url);}}).catch(()=>{});
-  }, 20*60*1000);
+  currentCh=ch; hubScreen.style.display="none"; playerScreen.style.display="flex";
+  chTitle.textContent=ch.name; audioOnly=false; document.body.classList.remove("audio-only");
+  modeBtn.textContent=t.audioMode; stopStream(); init();
 }
+function goToHub(){ stopStream(); playerScreen.style.display="none"; hubScreen.style.display="flex"; currentCh=null; }
+backBtn.onclick=()=>{ try{ Telegram.WebApp.close(); }catch(e){} };
 
-// Авто-открытие: даём requestFullscreen сработать ДО открытия плеера
-if (isAndroid() || isIOS()) {
-  setTimeout(() => openChannel(CHANNEL), 450);
-} else {
-  openChannel(CHANNEL);
-}
+buildHub();
 </script>
 </body>
 </html>

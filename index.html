@@ -165,8 +165,9 @@ function showUI() {
   if(isExpanded&&!audioOnly) hideTimeout=setTimeout(()=>overlay.classList.add("hidden"),4000);
 }
 
-function enterFs() {
-  if(video.webkitEnterFullscreen && isIOS()) { video.webkitEnterFullscreen(); isExpanded=true; fullscreenBtn.textContent=t.exitFs; return; }
+function enterFs(videoReady) {
+  // iOS: video.webkitEnterFullscreen только если видео уже загружено
+  if(video.webkitEnterFullscreen && isIOS() && videoReady) { video.webkitEnterFullscreen(); isExpanded=true; fullscreenBtn.textContent=t.exitFs; return; }
   try { if(tg?.requestFullscreen) tg.requestFullscreen(); } catch(e) {}
   if(container.requestFullscreen) {
     container.requestFullscreen()
@@ -185,7 +186,7 @@ function exitFs() {
   isExpanded=false; fullscreenBtn.textContent=t.fullscreen;
   overlay.classList.remove("hidden"); if(hideTimeout){clearTimeout(hideTimeout);hideTimeout=null;}
 }
-fullscreenBtn.onclick=()=>isExpanded?exitFs():enterFs();
+fullscreenBtn.onclick=()=>isExpanded?exitFs():enterFs(true);
 function onFsChange() {
   const fsEl=document.fullscreenElement||document.webkitFullscreenElement;
   if(fsEl){ isExpanded=true; fullscreenBtn.textContent=t.exitFs; overlay.classList.remove("hidden"); if(hideTimeout)clearTimeout(hideTimeout); hideTimeout=setTimeout(()=>overlay.classList.add("hidden"),3000); video.style.objectFit=window.innerWidth>window.innerHeight?"cover":"contain"; }
@@ -312,8 +313,8 @@ function openChannel(ch){
   currentCh=ch; hubScreen.style.display="none"; playerScreen.style.display="flex";
   chTitle.textContent=ch.name; audioOnly=false; document.body.classList.remove("audio-only");
   modeBtn.textContent=t.audioMode; stopStream(); init();
-  // requestFullscreen при тапе — с пользовательским жестом
-  if(isAndroid()||isIOS()) { try { tg.requestFullscreen(); } catch(e) {} }
+  // Авто-fullscreen с пользовательским жестом (тап на карточку)
+  enterFs(false);
 }
 function goToHub(){ stopStream(); playerScreen.style.display="none"; hubScreen.style.display="flex"; currentCh=null; }
 backBtn.onclick=()=>{ try{ Telegram.WebApp.close(); }catch(e){} };

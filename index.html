@@ -81,12 +81,20 @@ function updateSafeArea() {
   const top = tgTop > 0 ? tgTop : (document.fullscreenElement || tg?.isFullscreen ? 32 : 0);
   document.documentElement.style.setProperty('--tg-safe-top', top + 'px');
 }
+const hasTgFullscreen = typeof tg?.requestFullscreen === 'function';
+
 if (tg) {
   tg.ready(); tg.expand();
   try { tg.disableVerticalSwipes(); } catch(e) {}
   try { tg.setHeaderColor('#000000'); } catch(e) {}
   try { tg.setBackgroundColor('#000000'); } catch(e) {}
-  if (isAndroid() || isIOS()) setTimeout(() => { try { tg.requestFullscreen(); } catch(e) {} }, 300);
+  if (hasTgFullscreen && (isAndroid() || isIOS())) {
+    setTimeout(() => { try { tg.requestFullscreen(); } catch(e) {} }, 300);
+  } else {
+    // TG fullscreen недоступен — прячем наш хедер, используем нативный BackButton
+    document.querySelector('.player-header').style.display = 'none';
+    try { tg.BackButton.show(); tg.BackButton.onClick(() => { try { tg.close(); } catch(e) {} }); } catch(e) {}
+  }
   try { tg.onEvent('safeAreaChanged', updateSafeArea); } catch(e) {}
   try { tg.onEvent('contentSafeAreaChanged', updateSafeArea); } catch(e) {}
   setTimeout(updateSafeArea, 500);
@@ -111,6 +119,7 @@ const t = T[getLang()];
 
 function isIOS() { return /iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1)||(window.Telegram?.WebApp?.platform==="ios"); }
 function isAndroid() { return /Android/i.test(navigator.userAgent)||(window.Telegram?.WebApp?.platform==="android"); }
+function enforceMute() { if(!userUnmuted) video.muted=true; }
 
 const hubScreen=document.getElementById("hub-screen");
 const playerScreen=document.getElementById("player-screen");
@@ -321,8 +330,8 @@ async function init(){
 const CHANNEL = {
   id:"nova_tv",
   name:"Nova TV",
-  stream:"https://nova-proxy-eight.vercel.app/api/stream",
-  proxy:"https://nova-proxy-eight.vercel.app/api/proxy?url=",
+  stream:"https://nova-proxy.dyaltd.workers.dev/api/stream",
+  proxy:"https://nova-proxy.dyaltd.workers.dev/api/proxy?url=",
   cacheKey:"nova_tv_last_url_v4"
 };
 

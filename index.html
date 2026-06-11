@@ -313,8 +313,6 @@ function openChannel(ch){
   currentCh=ch; hubScreen.style.display="none"; playerScreen.style.display="flex";
   chTitle.textContent=ch.name; audioOnly=false; document.body.classList.remove("audio-only");
   modeBtn.textContent=t.audioMode; stopStream(); init();
-  // Авто-fullscreen с пользовательским жестом (тап на карточку)
-  enterFs(false);
 }
 function goToHub(){ stopStream(); playerScreen.style.display="none"; hubScreen.style.display="flex"; currentCh=null; }
 backBtn.onclick=()=>{ try{ Telegram.WebApp.close(); }catch(e){} };

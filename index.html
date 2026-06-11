@@ -130,7 +130,7 @@ function getLang() {
 const t = T[getLang()];
 
 function isIOS() { return /iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1)||(window.Telegram?.WebApp?.platform==="ios"); }
-function isAndroid() { return /Android/i.test(navigator.userAgent); }
+function isAndroid() { return /Android/i.test(navigator.userAgent)||(window.Telegram?.WebApp?.platform==="android"); }
 
 const hubScreen=document.getElementById("hub-screen"),playerScreen=document.getElementById("player-screen");
 const channelsGrid=document.getElementById("channels-grid"),backBtn=document.getElementById("back-btn");
@@ -165,9 +165,8 @@ function showUI() {
   if(isExpanded&&!audioOnly) hideTimeout=setTimeout(()=>overlay.classList.add("hidden"),4000);
 }
 
-function enterFs(videoReady) {
-  // iOS: video.webkitEnterFullscreen только если видео уже загружено
-  if(video.webkitEnterFullscreen && isIOS() && videoReady) { video.webkitEnterFullscreen(); isExpanded=true; fullscreenBtn.textContent=t.exitFs; return; }
+function enterFs() {
+  if(video.webkitEnterFullscreen && isIOS()) { video.webkitEnterFullscreen(); isExpanded=true; fullscreenBtn.textContent=t.exitFs; return; }
   try { if(tg?.requestFullscreen) tg.requestFullscreen(); } catch(e) {}
   if(container.requestFullscreen) {
     container.requestFullscreen()
@@ -186,7 +185,7 @@ function exitFs() {
   isExpanded=false; fullscreenBtn.textContent=t.fullscreen;
   overlay.classList.remove("hidden"); if(hideTimeout){clearTimeout(hideTimeout);hideTimeout=null;}
 }
-fullscreenBtn.onclick=()=>isExpanded?exitFs():enterFs(true);
+fullscreenBtn.onclick=()=>isExpanded?exitFs():enterFs();
 function onFsChange() {
   const fsEl=document.fullscreenElement||document.webkitFullscreenElement;
   if(fsEl){ isExpanded=true; fullscreenBtn.textContent=t.exitFs; overlay.classList.remove("hidden"); if(hideTimeout)clearTimeout(hideTimeout); hideTimeout=setTimeout(()=>overlay.classList.add("hidden"),3000); video.style.objectFit=window.innerWidth>window.innerHeight?"cover":"contain"; }
